@@ -57,41 +57,54 @@ Xcolumns=['horse_prize_1y', 'horse_prize_2y',
        'horse_fizetos_percent_1y',
        'horse_fizetos_percent_2y']
 
+
 #getting data
 def getdata():
     conn = sqlite3.connect("trottingnew1012.db")
     query = "SELECT * FROM horse_races_aggregated"
     df = pd.read_sql_query(query, conn)
     conn.close()
-    df.to_csv(r"C:\Users\bence\OneDrive\Project derbi\querynew.csv", index=False)
+    df.to_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv", index=False)
     df.drop(df.loc[df['rank']==0].index, inplace=True)
 
 
 
-df=pd.read_csv('querynewtop5.csv')
+df=pd.read_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv")
 
-#getting dummies
-#ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
-#encoded = ohe.fit_transform(df[categoricalcolumns])
-#features = ohe.categories_
-#df=pd.concat([df,encoded], axis=1)
-X=df.drop(columns=['number','race_length','jockey_id','stable_id','trainer_id'])
-#df.to_csv(r"C:\Users\bence\OneDrive\Project derbi\lasttestwithdummies.csv", index=False)
-print('Got dummies')
-#reading data
-#df=pd.read_csv('lasttestwithdummies.csv')
-df=df.drop(df[df['rank']==20].index)
-print('Reading csv')
-#Assigning X
 X=df[Xcolumns]
-print('Assigned X')
+
+dummies=True
+
+#Assigning X
+
+def getdummies(df, X):
+       
+       ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
+       encoded = ohe.fit_transform(df[categoricalcolumns])
+       features = ohe.categories_
+       print('Got dummies')
+       X=pd.concat([X,encoded], axis=1)
+       print('Assigned X')
+       return X, features
+
 #Assigning y
+
 y=df['rank']
 print('Assigned y')
+
 #splitting data
-X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.0001, shuffle=False)
+
+if dummies==True:
+       X, features = getdummies(df, X)
+       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
+else:
+       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
+       features=None
+
 print('Data splitted')
+
 #preprocessing data
+
 imp_mean = SimpleImputer(strategy='mean')
 X_train.loc[:,sscolumns] = imp_mean.fit_transform(X_train.loc[:,sscolumns])
 X_test.loc[:,sscolumns] = imp_mean.transform(X_test.loc[:,sscolumns])
@@ -107,17 +120,23 @@ Y_test=le.transform(Y_test)
 print('y labeled')
 
 #fitting model
-model_fit = MLPClassifier(random_state=1)
-model_fit.fit(X_train, Y_train)
-Y_pred = model_fit.predict(X_test)
+
+best_model = MLPClassifier(random_state=1)
+best_model.fit(X_train, Y_train)
+Y_pred = best_model.predict(X_test)
 print('model fitted')
+
 #exporting model
-joblib.dump(model_fit, 'modelmlp_oneyear.pkl')
-joblib.dump(imp_mean, 'imputer_oneyear.pkl')
-joblib.dump(ss, 'standardscaler_oneyear.pkl')
-#joblib.dump(features,'features_oneyear.pkl')
+
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelmlp_twoyear.pkl")
+joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_twoyear.pkl")
+joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_twoyear.pkl")
+joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_twoyear.pkl")
+
 print('model and scalers exported')
+
 #plotting data
+
 print(Y_test)
 print(Y_pred)
 print('R2score: ' , r2_score(Y_test, Y_pred))
@@ -128,3 +147,11 @@ plt.xlabel('Actual')
 plt.ylabel('Predicted')
 plt.title('Actual vs Predicted')
 plt.show()
+
+# Feature importance
+
+importances = best_model.feature_importances_
+feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
+print(feature_importance_df.sort_values(by='Importance', ascending=False))
+
+feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\mlpfeature_importance_twoyear.csv", index=False)

@@ -63,22 +63,39 @@ df = df[df["id"]<161944]
 print(df.head())
 
 print('Reading csv')
-#Assigning X
 X=df[Xcolumns]
-ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
-encoded = ohe.fit_transform(df[categoricalcolumns])
-features = ohe.categories_
-print('Got dummies')
-X=pd.concat([X,encoded], axis=1)
-print(X.head())
-print('Assigned X')
+
+dummies=True
+
+#Assigning X
+
+def getdummies(df, X):
+       
+       ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
+       encoded = ohe.fit_transform(df[categoricalcolumns])
+       features = ohe.categories_
+       print('Got dummies')
+       X=pd.concat([X,encoded], axis=1)
+       print('Assigned X')
+       return X, features
+
 #Assigning y
-y=df['top4']
+
+y=df['rank']
 print('Assigned y')
+
 #splitting data
-X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
+
+if dummies==True:
+       X, features = getdummies(df, X)
+       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
+else:
+       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
+       features=None
 print('Data splitted')
+
 #preprocessing data
+
 imp_mean = SimpleImputer(strategy='mean')
 X_train.loc[:,sscolumns] = imp_mean.fit_transform(X_train.loc[:,sscolumns])
 X_test.loc[:,sscolumns] = imp_mean.transform(X_test.loc[:,sscolumns])
@@ -94,17 +111,22 @@ Y_test=le.transform(Y_test)
 print('y labeled')
 
 #fitting model
-model_fit = MLPClassifier(random_state=1, max_iter=10)
-model_fit.fit(X_train, Y_train)
-Y_pred = model_fit.predict(X_test)
+
+best_model = MLPClassifier(random_state=1, max_iter=10)
+best_model.fit(X_train, Y_train)
+Y_pred = best_model.predict(X_test)
 print('model fitted')
+
 #exporting model
-joblib.dump(model_fit, 'modelrandomf_oneyear.pkl')
-joblib.dump(imp_mean, 'imputer_oneyear.pkl')
-joblib.dump(ss, 'standardscaler_oneyear.pkl')
-joblib.dump(features,'features_oneyear.pkl')
+
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelmlp_oneyear.pkl")
+joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
+joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
+joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
 print('model and scalers exported')
+
 #plotting data
+
 print(Y_test)
 print(Y_pred)
 print('R2score: ' , r2_score(Y_test, Y_pred))
@@ -116,4 +138,10 @@ plt.ylabel('Predicted')
 plt.title('Actual vs Predicted')
 plt.show()
 
+# Feature importance
 
+importances = best_model.feature_importances_
+feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
+print(feature_importance_df.sort_values(by='Importance', ascending=False))
+
+feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\mlpfeature_importance_oneyear.csv", index=False)
