@@ -82,13 +82,13 @@ y=df['rank']
 print('Assigned y')
 
 #splitting data
+
 if dummies==True:
        X, features = getdummies(df, X)
        X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
 else:
        X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
        features=None
-print('Data splitted')
 
 #preprocessing data
 
@@ -108,12 +108,33 @@ print('y labeled')
 
 #fitting model
 
+from sklearn.model_selection import GridSearchCV, cross_val_score
 
+# Hyperparameter tuning
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [10, 50, 100, None],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': ['sqrt', 'log2', None]
+}
 
+grid_search = GridSearchCV(
+    estimator=RandomForestClassifier(random_state=1, class_weight='balanced'),
+    param_grid=param_grid,
+    scoring='accuracy',
+    cv=5,
+    n_jobs=-1,
+    verbose=2
+)
 
+grid_search.fit(X_train, Y_train)
+best_model = grid_search.best_estimator_
+print("Best Parameters:", grid_search.best_params_)
 
-
-best_model=RandomForestClassifier(random_state=1, class_weight='balanced')
+# Cross-validation
+cv_scores = cross_val_score(best_model, X_train, Y_train, cv=5, scoring='accuracy')
+print("Cross-Validation Accuracy:", cv_scores.mean())
 
 # Fit the best model
 best_model.fit(X_train, Y_train)
@@ -147,4 +168,4 @@ importances = best_model.feature_importances_
 feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
 print(feature_importance_df.sort_values(by='Importance', ascending=False))
 
-feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\feature_importance_oneyear.csv", index=False)
+feature_importance_df.to_csv(r"C:\Users\bence\OneDrive\Project derbi\feature_importance_oneyear.csv", index=False)

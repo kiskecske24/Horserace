@@ -43,12 +43,12 @@ def getdata():
     query = "SELECT * FROM horse_races_aggregated WHERE race_id>146717"
     df = pd.read_sql_query(query, conn)
     conn.close()
-    df.to_csv(r"C:\Users\bence\OneDrive\projectderbiuj\querynew2020.csv", index=False)
+    df.to_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv", index=False)
     df.drop(df.loc[df['rank']==0].index, inplace=True)
 
 
 
-df=pd.read_csv('querynew1012withtopx.csv')
+df=pd.read_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv")
 
 #getting dummies
 
@@ -62,16 +62,19 @@ df = df[df["id"]>146717]
 df = df[df["id"]<161945]
 
 print('Reading csv')
-
-#Assigning X
 X=df[Xcolumns]
 
-ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
-encoded = ohe.fit_transform(df[categoricalcolumns])
-features = ohe.categories_
-print('Got dummies')
-X=pd.concat([X,encoded], axis=1)
-print('Assigned X')
+dummies=True
+#Assigning X
+def getdummies(df, X):
+       
+       ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
+       encoded = ohe.fit_transform(df[categoricalcolumns])
+       features = ohe.categories_
+       print('Got dummies')
+       X=pd.concat([X,encoded], axis=1)
+       print('Assigned X')
+       return X, features
 
 #Assigning y
 
@@ -80,8 +83,12 @@ print('Assigned y')
 
 #splitting data
 
-X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
-print('Data splitted')
+if dummies==True:
+       X, features = getdummies(df, X)
+       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
+else:
+       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
+       features=None
 
 #preprocessing data
 
@@ -132,22 +139,13 @@ print("Cross-Validation Accuracy:", cv_scores.mean())
 best_model.fit(X_train, Y_train)
 Y_pred = best_model.predict(X_test)
 
-# Evaluate the model
-print('R2score: ', r2_score(Y_test, Y_pred))
-print('Accuracy score: ', accuracy_score(Y_test, Y_pred))
-print(confusion_matrix(Y_test, Y_pred))
-plt.scatter(Y_test, Y_pred)
-plt.xlabel('Actual')
-plt.ylabel('Predicted')
-plt.title('Actual vs Predicted')
-plt.show()
 
 #exporting model
 
-joblib.dump(best_model, 'modelrandomf_oneyear.pkl')
-joblib.dump(imp_mean, 'imputer_oneyear.pkl')
-joblib.dump(ss, 'standardscaler_oneyear.pkl')
-joblib.dump(features,'features_oneyear.pkl')
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl")
+joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
+joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
+joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
 print('model and scalers exported')
 
 #plotting data
