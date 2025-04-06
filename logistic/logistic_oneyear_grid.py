@@ -14,7 +14,7 @@ import joblib
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
-from xgboost import XGBClassifier
+from sklearn import linear_model
 from sklearn.model_selection import GridSearchCV, cross_val_score
 from sklearn.metrics import classification_report
 
@@ -108,18 +108,14 @@ print('y labeled')
 
 # Hyperparameter tuning for XGBoost
 param_grid = {
-    'n_estimators': [50, 100, 200],
-    'max_depth': [3, 5, 10],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'subsample': [0.8, 1.0],
-    'colsample_bytree': [0.8, 1.0],
-    'gamma': [0, 1, 5]
+    'fit_intercept': [True, False],
+    'positive': [True, False]  # Ensures coefficients are positive (optional)
 }
 
 grid_search = GridSearchCV(
-    estimator=XGBClassifier(random_state=1, use_label_encoder=False, eval_metric='logloss'),
+    estimator=linear_model.LogisticRegression(),
     param_grid=param_grid,
-    scoring='accuracy',
+    scoring='r2',  # Use R2 score for regression
     cv=5,
     n_jobs=-1,
     verbose=2
@@ -131,8 +127,8 @@ best_model = grid_search.best_estimator_
 print("Best Parameters:", grid_search.best_params_)
 
 # Cross-validation
-cv_scores = cross_val_score(best_model, X_train, Y_train, cv=5, scoring='accuracy')
-print("Cross-Validation Accuracy:", cv_scores.mean())
+cv_scores = cross_val_score(best_model, X_train, Y_train, cv=5, scoring='r2')
+print("Cross-Validation R2 Score:", cv_scores.mean())
 
 # Fit the best model
 best_model.fit(X_train, Y_train)
@@ -151,8 +147,9 @@ plt.ylabel('Predicted')
 plt.title('Actual vs Predicted')
 plt.show()
 
-# Exporting the model and preprocessing objects
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelxgb_oneyear.pkl")
+# Exporting the model and preprocessing objects 
+##TODO ismétlődések megszüntetése, environment variables
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\logistic_oneyear.pkl")
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
 joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
 joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
@@ -162,4 +159,4 @@ print('Model and scalers exported')
 importances = best_model.feature_importances_
 feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
 print(feature_importance_df.sort_values(by='Importance', ascending=False))
-feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\xgboostfeature_importance_oneyear.csv", index=False)
+feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\logisticfeature_importance_oneyear.csv", index=False)

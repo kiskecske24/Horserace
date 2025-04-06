@@ -78,7 +78,7 @@ def getdummies(df, X):
 
 #Assigning y
 
-y=df['rank']
+y=df['top4']
 print('Assigned y')
 
 #splitting data
