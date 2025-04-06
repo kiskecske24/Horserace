@@ -4,3 +4,5 @@ numpy
 matplotlib
 sklearn
 joblib
+xgboost
+scipy
