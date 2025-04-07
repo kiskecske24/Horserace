@@ -43,12 +43,12 @@ def getdata():
     query = "SELECT * FROM horse_races_aggregated WHERE race_id>146717"
     df = pd.read_sql_query(query, conn)
     conn.close()
-    df.to_csv(r"C:\Users\bence\OneDrive\projectderbiuj\querynew2020.csv", index=False)
+    df.to_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv", index=False)
     df.drop(df.loc[df['rank']==0].index, inplace=True)
 
 
 
-df=pd.read_csv('querynew1012withtop4.csv')
+df=pd.read_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv")
 
 #getting dummies
 
@@ -112,7 +112,7 @@ print('y labeled')
 
 #fitting model
 
-best_model = MLPClassifier(random_state=1, max_iter=10)
+best_model = MLPClassifier(random_state=1, max_iter=1000, hidden_layer_sizes=(100, 50), activation='relu', solver='adam', learning_rate_init=0.001, early_stopping=True, n_iter_no_change=10)
 best_model.fit(X_train, Y_train)
 Y_pred = best_model.predict(X_test)
 print('model fitted')

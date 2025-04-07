@@ -182,7 +182,7 @@ for race in races:
   pd.set_option('display.max_columns', None)
   df = pd.read_sql(query, conn)
 
-df=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\query_class_by_2.csv')
+df=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\querymewtop4.csv')
 
 
 def getresults():
@@ -195,7 +195,7 @@ def getresults():
     X=pd.concat([X,encoded], axis=1)
     X.loc[:,sscolumns] = imp_mean.transform(X.loc[:,sscolumns])
     X.loc[:,sscolumns]=ss.fit_transform(X.loc[:,sscolumns])
-    originaldatabase=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\query_class_by_2.csv')
+    originaldatabase=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\querynewtop4.csv')
     fornumberdatabase = originaldatabase[originaldatabase['race_id'] == race_id]
     Y_pred=model_fit.predict(X)
     numbers=fornumberdatabase.number.tolist()

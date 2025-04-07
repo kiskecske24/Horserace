@@ -18,7 +18,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
@@ -134,8 +133,8 @@ param_distributions = {
 models = {
     'KNN': (KNeighborsClassifier(), {
          'n_neighbors': [3, 5, 7], 'weights': ['uniform', 'distance']}),
-    'LogisticRegression': (LogisticRegression(random_state=1), {
-         'C': [0.1, 1, 10]}),
+    'LogisticRegression': (LogisticRegression(random_state=1, max_iter=1000), {
+         'C': [0.1, 1, 10], 'solver': ['liblinear', 'lbfgs'], 'penalty': ['l2']}),
     'RandomForest': (RandomForestClassifier(random_state=1), {
          'n_estimators': [10, 100, 200], 'max_depth': [5, 7, 10, 15]}),
     'XGBoost': (XGBClassifier(random_state=1), {
@@ -144,16 +143,12 @@ models = {
          'n_estimators': [10, 100, 500], 'max_depth': [3, 6, 10]}),
     'ExtraTrees': (ExtraTreesClassifier(random_state=1), {
          'n_estimators': [50, 100, 200], 'max_depth': [5, 10, 15]}),
-    
+    'HistGradientBoosting': (HistGradientBoostingClassifier(random_state=1), {
+         'max_iter': [100, 200], 'max_depth': [3, 6, 10], 'learning_rate': [0.01, 0.1]}),
     'MLP': (MLPClassifier(random_state=1, max_iter=1000), {
-        'hidden_layer_sizes': [(50,), (100,), (50, 50)],
-        'activation': ['relu', 'tanh'],
-        'alpha': [0.0001, 0.001]}),
+        'hidden_layer_sizes': [(50,), (100,), (50, 50)], 'activation': ['relu', 'tanh'], 'alpha': [0.0001, 0.001]}),
     'SVM': (SVC(random_state=1), {
-        'C': [0.1, 1, 10],
-        'kernel': ['linear', 'rbf'],
-        'gamma': ['scale', 'auto']
-    })
+        'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf'], 'gamma': ['scale', 'auto']})
 }    
 
 best_model = None
@@ -166,7 +161,7 @@ model_accuracies = {}
 # Iterate through models and perform grid search
 for model_name, (model, param_distributions) in models.items():
     print(f"Training {model_name}...")
-    grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_distributions, scoring='accuracy', cv=5, verbose=1, n_iter=50, random_state=1)
+    grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_distributions, scoring='accuracy', cv=5, verbose=1, n_iter=5, random_state=1)
     grid_search.fit(X_train, Y_train)
     
     # Save the accuracy of the current model
@@ -212,7 +207,7 @@ best_model.fit(X,y)
 
 #exporting model and scalers
 
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelcomplex_oneyear.pkl")
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\classifiers_oneyear.pkl")
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
 joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
 joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")

@@ -14,17 +14,18 @@ import joblib
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import svm
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
-from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import SVC
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import ElasticNet
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.svm import SVR
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import ExtraTreesRegressor
 
 
 sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
@@ -123,6 +124,7 @@ print('y labeled')
 from sklearn.model_selection import RandomizedSearchCV, cross_val_score
 
 # Hyperparameter tuning
+
 param_distributions = {
     'n_estimators': [50, 100, 200],
     'max_depth': [10, 50, 100, None],
@@ -132,70 +134,106 @@ param_distributions = {
 }
 
 models = {
-    'KNN': (KNeighborsClassifier(), {
-         'n_neighbors': [3, 5, 7], 'weights': ['uniform', 'distance']}),
-    'LogisticRegression': (LogisticRegression(random_state=1), {
-         'C': [0.1, 1, 10]}),
-    'RandomForest': (RandomForestClassifier(random_state=1), {
-         'n_estimators': [10, 100, 200], 'max_depth': [5, 7, 10, 15]}),
-    'XGBoost': (XGBClassifier(random_state=1), {
-         'n_estimators': [10, 100, 500], 'max_depth': [3, 6, 10]}),
-    'LightGBM': (LGBMClassifier(random_state=1), {
-         'n_estimators': [10, 100, 500], 'max_depth': [3, 6, 10]}),
-    'ExtraTrees': (ExtraTreesClassifier(random_state=1), {
-         'n_estimators': [50, 100, 200], 'max_depth': [5, 10, 15]}),
-    
-    'MLP': (MLPClassifier(random_state=1, max_iter=1000), {
+    'LinearRegression': (LinearRegression(), {
+        'fit_intercept': [True, False],  # Whether to calculate the intercept
+        'positive': [True, False]  # Ensure coefficients are positive
+    }),
+    'Ridge': (Ridge(), {
+        'alpha': [0.1, 1.0, 10.0],  # Regularization strength
+        'fit_intercept': [True, False]
+    }),
+    'Lasso': (Lasso(), {
+        'alpha': [0.1, 1.0, 10.0],  # Regularization strength
+        'fit_intercept': [True, False]
+    }),
+    'ElasticNet': (ElasticNet(), {
+        'alpha': [0.1, 1.0, 10.0],  # Regularization strength
+        'l1_ratio': [0.1, 0.5, 0.9],  # Mix of L1 and L2 regularization
+        'fit_intercept': [True, False]
+    }),
+    'RandomForestRegressor': (RandomForestRegressor(random_state=1), {
+        'n_estimators': [50, 100, 200],
+        'max_depth': [10, 50, 100, None],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4]
+    }),
+    'XGBoostRegressor': (XGBRegressor(random_state=1), {
+        'n_estimators': [50, 100, 200],
+        'max_depth': [3, 6, 10],
+        'learning_rate': [0.01, 0.1, 0.2]
+    }),
+    'LightGBMRegressor': (LGBMRegressor(random_state=1), {
+        'n_estimators': [50, 100, 200],
+        'max_depth': [3, 6, 10],
+        'learning_rate': [0.01, 0.1, 0.2]
+    }),
+    'HistGradientBoostingRegressor': (HistGradientBoostingRegressor(random_state=1), {
+        'max_iter': [100, 200],
+        'max_depth': [3, 6, 10],
+        'learning_rate': [0.01, 0.1]
+    }),
+    'SVR': (SVR(), {
+        'kernel': ['linear', 'rbf'],
+        'C': [0.1, 1, 10],
+        'gamma': ['scale', 'auto']
+    }),
+    'KNeighborsRegressor': (KNeighborsRegressor(), {
+        'n_neighbors': [3, 5, 7],
+        'weights': ['uniform', 'distance']
+    }),
+    'MLPRegressor': (MLPRegressor(random_state=1, max_iter=1000), {
         'hidden_layer_sizes': [(50,), (100,), (50, 50)],
         'activation': ['relu', 'tanh'],
-        'alpha': [0.0001, 0.001]}),
-    'SVM': (SVC(random_state=1), {
-        'C': [0.1, 1, 10],
-        'kernel': ['linear', 'rbf'],
-        'gamma': ['scale', 'auto']
+        'alpha': [0.0001, 0.001]
     })
-}    
+}
 
 best_model = None
-best_accuracy = 0
+best_r2_score = float('-inf')
 best_model_name = None
 
-# Store the accuracy of each model
-model_accuracies = {}
+# Store the R² score of each model
+
+model_r2_scores = {}
 
 # Iterate through models and perform grid search
+
 for model_name, (model, param_distributions) in models.items():
     print(f"Training {model_name}...")
-    grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_distributions, scoring='accuracy', cv=5, verbose=1, n_iter=50, random_state=1)
+    grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_distributions, scoring='r2', cv=5, verbose=1, n_iter=50, random_state=1)
     grid_search.fit(X_train, Y_train)
     
-    # Save the accuracy of the current model
-    model_accuracies[model_name] = grid_search.best_score_
+    # Save the R² score of the current model
+
+    model_r2_scores[model_name] = grid_search.best_score_
+
     # Check if this model is the best
-    if grid_search.best_score_ > best_accuracy:
-        best_accuracy = grid_search.best_score_
+
+    if grid_search.best_score_ > best_r2_score:
+        best_r2_score = grid_search.best_score_
         best_model = grid_search.best_estimator_
         best_model_name = model_name
-    print("current best accuracy: " , best_accuracy)
+    print(f"Current best R² score: {best_r2_score}")
 
-print(f"Best Model: {best_model_name} with accuracy: {best_accuracy}")
+print(f"\nBest Model: {best_model_name} with R² score: {best_r2_score:.4f}")
 
 
 
 print("Best Parameters:", grid_search.best_params_)
 
 # Cross-validation
+
 cv_scores = cross_val_score(best_model, X_train, Y_train, cv=5, scoring='accuracy')
 print("Cross-Validation Accuracy:", cv_scores.mean())
 
 # Fit the best model
+
 best_model.fit(X_train, Y_train)
 Y_pred = best_model.predict(X_test)
 
 
-
-
 #Preprocessing data for export
+
 X = df[Xcolumns]
 imp_mean = SimpleImputer(strategy='mean')
 X.loc[:,sscolumns] = imp_mean.fit_transform(X.loc[:,sscolumns])
@@ -208,7 +246,6 @@ le.fit(y)
 y=le.transform(y)
 print('y labeled')
 best_model.fit(X,y)
-
 
 #exporting model and scalers
 
@@ -239,9 +276,9 @@ print(feature_importance_df.sort_values(by='Importance', ascending=False))
 
 feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\feature_importance_oneyear.csv", index=False)
 
-# Print the accuracy of each model at the end
-print("\nModel Accuracies:")
-for model_name, accuracy in model_accuracies.items():
-    print(f"{model_name}: {accuracy:.4f}")
+# Print the R² score of each model
 
-print(f"\nBest Model: {best_model_name} with accuracy: {best_accuracy:.4f}")
+print("\nModel R² Scores:")
+for model_name, r2_score in model_r2_scores.items():
+    print(f"{model_name}: {r2_score:.4f}")
+
