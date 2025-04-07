@@ -249,7 +249,7 @@ best_model.fit(X,y)
 
 #exporting model and scalers
 
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelcomplex_oneyear.pkl")
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\regressors_oneyear.pkl")
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
 joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
 joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
