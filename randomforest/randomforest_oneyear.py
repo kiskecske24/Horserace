@@ -40,7 +40,7 @@ Xcolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
 #getting data
 def getdata():
     conn = sqlite3.connect("trottingnew1012.db")
-    query = "SELECT * FROM horse_races_aggregated WHERE race_id>146717"
+    query = "SELECT * FROM horse_races_aggregated"
     df = pd.read_sql_query(query, conn)
     conn.close()
     df.to_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv", index=False)

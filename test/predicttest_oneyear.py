@@ -14,7 +14,7 @@ import joblib
 from sklearn.compose import ColumnTransformer
 
 
-model_fit=joblib.load(r'C:\Users\bence\projectderbiuj\models\modelcomplex_oneyear.pkl')
+best_model=joblib.load(r'C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl')
 imp_mean=joblib.load(r'C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl')
 ss=joblib.load(r'C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl')
 features=joblib.load(r'C:\Users\bence\projectderbiuj\models\features_oneyear.pkl')
@@ -64,7 +64,8 @@ standard_columns = [
   'dividend',
 ]
 
-categoricalcolumns=['number','race_length','jockey_id','stable_id','trainer_id']
+categoricalcolumns=['number','race_length']
+labelcolumns=['horse_id','stable_id',  'jockey_id']
 
 
 base_query = """
@@ -182,22 +183,32 @@ for race in races:
   pd.set_option('display.max_columns', None)
   df = pd.read_sql(query, conn)
 
-df=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\querymewtop4.csv')
+df=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\merged_output.csv')
 
+le = LabelEncoder()
+
+for x in range(0,2):
+    df[labelcolumns[x]]=le.fit_transform(df[labelcolumns[x]].astype(str))
 
 def getresults():
     race_id=18284
-    ohe = OneHotEncoder(categories=features, handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
-
+    
+    
     filtered_df = df[df['race_id'] == race_id]
-    X=filtered_df[Xcolumns]
-    encoded = ohe.fit_transform(df[categoricalcolumns])
-    X=pd.concat([X,encoded], axis=1)
+    for i in range(1, 14):  # For competitor_1 to competitor_14
+        df[f'competitor_{i}'].fillna(-1, inplace=True)  # Fill missing values with -1
+
+    # Apply Label Encoding to competitor columns
+    le = LabelEncoder()
+    for i in range(1, 14):  # For competitor_1 to competitor_14
+        df[f'competitor_{i}'] = le.fit_transform(df[f'competitor_{i}'].astype(str))
+
+    X=filtered_df[Xcolumns+ [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
     X.loc[:,sscolumns] = imp_mean.transform(X.loc[:,sscolumns])
     X.loc[:,sscolumns]=ss.fit_transform(X.loc[:,sscolumns])
-    originaldatabase=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\querynewtop4.csv')
+    originaldatabase=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\merged_output.csv')
     fornumberdatabase = originaldatabase[originaldatabase['race_id'] == race_id]
-    Y_pred=model_fit.predict(X)
+    Y_pred=best_model.predict(X)
     numbers=fornumberdatabase.number.tolist()
     actual=fornumberdatabase['rank'].tolist()
     for x in range(len(Y_pred)):
