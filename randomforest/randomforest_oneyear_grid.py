@@ -65,6 +65,7 @@ print('Reading csv')
 X=df[Xcolumns]
 
 dummies=True
+
 #Assigning X
 def getdummies(df, X):
        

@@ -14,10 +14,10 @@ import joblib
 from sklearn.compose import ColumnTransformer
 
 
-model_fit=joblib.load('modelrandomf_oneyear.pkl')
-imp_mean=joblib.load('imputer_oneyear.pkl')
-ss=joblib.load('standardscaler_oneyear.pkl')
-features=joblib.load('features_oneyear.pkl')
+model_fit=joblib.load(r'C:\Users\bence\projectderbiuj\models\modelcomplex_oneyear.pkl')
+imp_mean=joblib.load(r'C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl')
+ss=joblib.load(r'C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl')
+features=joblib.load(r'C:\Users\bence\projectderbiuj\models\features_oneyear.pkl')
 
 # time-based and percentage
 minmax_columns = [
@@ -169,10 +169,10 @@ Xcolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
        'horse_podiums_1y','horse_fizetos_1y','jockey_wins_1y',
        'horse_wins_percent_1y','horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
 
-conn = sqlite3.connect('trotting1012.db')
+conn = sqlite3.connect(r'C:\Users\bence\projectderbiuj\data\trotting1012.db')
 conn.create_function("roman_to_integer", 1, roman_to_integer)
 cur = conn.cursor()
-cur.execute("SELECT date,id,daily from races where date='2024-10-12' and id=18281")
+cur.execute("SELECT date,id,daily from races where date='2024-10-12' and id=18284")
 races = cur.fetchall()
 print(races)
 
@@ -182,11 +182,11 @@ for race in races:
   pd.set_option('display.max_columns', None)
   df = pd.read_sql(query, conn)
 
-df=pd.read_csv('querynew1012withtopx.csv')
+df=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\query_class_by_2.csv')
 
 
 def getresults():
-    race_id=18281
+    race_id=18284
     ohe = OneHotEncoder(categories=features, handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
 
     filtered_df = df[df['race_id'] == race_id]
@@ -195,7 +195,7 @@ def getresults():
     X=pd.concat([X,encoded], axis=1)
     X.loc[:,sscolumns] = imp_mean.transform(X.loc[:,sscolumns])
     X.loc[:,sscolumns]=ss.fit_transform(X.loc[:,sscolumns])
-    originaldatabase=pd.read_csv('querynew1012withtopx.csv')
+    originaldatabase=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\query_class_by_2.csv')
     fornumberdatabase = originaldatabase[originaldatabase['race_id'] == race_id]
     Y_pred=model_fit.predict(X)
     numbers=fornumberdatabase.number.tolist()

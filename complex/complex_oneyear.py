@@ -23,6 +23,8 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
 
 
 sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
@@ -47,16 +49,17 @@ Xcolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
 
 #getting data
 def getdata():
-    conn = sqlite3.connect("trottingnew1012.db")
-    query = "SELECT * FROM horse_races_aggregated WHERE race_id>146717"
+    conn = sqlite3.connect(r"C:\Users\bence\projectderbiuj\data\trotting1012.db")
+    query = "SELECT * FROM horse_races_aggregated"
     df = pd.read_sql_query(query, conn)
     conn.close()
-    df.to_csv(r"C:\Users\bence\projectderbiuj\data\querynetop4.csv", index=False)
+    df.to_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv", index=False)
     df.drop(df.loc[df['rank']==0].index, inplace=True)
 
 
 
-df=pd.read_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4csv")
+
+df=pd.read_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv")
 
 #getting dummies
 
@@ -73,6 +76,7 @@ print('Reading csv')
 X=df[Xcolumns]
 
 dummies=True
+
 #Assigning X
 def getdummies(df, X):
        
@@ -116,7 +120,7 @@ print('y labeled')
 
 #fitting model
 
-from sklearn.model_selection import GridSearchCV, cross_val_score
+from sklearn.model_selection import RandomizedSearchCV, cross_val_score
 
 # Hyperparameter tuning
 param_grid = {
@@ -128,31 +132,52 @@ param_grid = {
 }
 
 models = {
-    'SVM': (svm.SVC(random_state=1), {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf']}),
-    'KNN': (KNeighborsClassifier(), {'n_neighbors': [3, 5, 7], 'weights': ['uniform', 'distance']}),
-    'LogisticRegression': (LogisticRegression(random_state=1), {'C': [0.1, 1, 10]}),
-    'RandomForest': (RandomForestClassifier(random_state=1), {'n_estimators': [10, 15, 20, 50, 100, 200], 'max_depth': [5, 7, 10, 15]}),
-    'XGBoost': (XGBClassifier(random_state=1), {'n_estimators': [10, 15, 20, 100, 500], 'max_depth': [3, 6, 7, 10]}),
-    'LightGBM': (LGBMClassifier(random_state=1), {'n_estimators': [10, 10, 20, 100, 500], 'max_depth': [3, 6, 7, 10]}),
-    'ExtraTrees': (ExtraTreesClassifier(random_state=1), {'n_estimators': [50, 100, 200], 'max_depth': [5, 10, 15]}),
-    'HistGradientBoosting': (HistGradientBoostingClassifier(random_state=1), {'max_iter': [100, 200], 'max_depth': [3, 6, 10]})
-}
+    'KNN': (KNeighborsClassifier(), {
+         'n_neighbors': [3, 5, 7], 'weights': ['uniform', 'distance']}),
+    'LogisticRegression': (LogisticRegression(random_state=1), {
+         'C': [0.1, 1, 10]}),
+    'RandomForest': (RandomForestClassifier(random_state=1), {
+         'n_estimators': [10, 100, 200], 'max_depth': [5, 7, 10, 15]}),
+    'XGBoost': (XGBClassifier(random_state=1), {
+         'n_estimators': [10, 100, 500], 'max_depth': [3, 6, 10]}),
+    'LightGBM': (LGBMClassifier(random_state=1), {
+         'n_estimators': [10, 100, 500], 'max_depth': [3, 6, 10]}),
+    'ExtraTrees': (ExtraTreesClassifier(random_state=1), {
+         'n_estimators': [50, 100, 200], 'max_depth': [5, 10, 15]}),
+    'HistGradientBoosting': (HistGradientBoostingClassifier(random_state=1), {
+         'max_iter': [100, 200], 'max_depth': [3, 6, 10]}),
+    'MLP': (MLPClassifier(random_state=1, max_iter=500), {
+        'hidden_layer_sizes': [(50,), (100,), (50, 50)],
+        'activation': ['relu', 'tanh'],
+        'alpha': [0.0001, 0.001]}),
+    'SVM': (SVC(random_state=1), {
+        'C': [0.1, 1, 10],
+        'kernel': ['linear', 'rbf'],
+        'gamma': ['scale', 'auto']
+    })
+}    
 
 best_model = None
 best_accuracy = 0
 best_model_name = None
 
+# Store the accuracy of each model
+model_accuracies = {}
+
 # Iterate through models and perform grid search
 for model_name, (model, param_grid) in models.items():
     print(f"Training {model_name}...")
-    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, scoring='accuracy', cv=5, verbose=1)
+    grid_search = RandomizedSearchCV(estimator=model, param_grid=param_grid, scoring='accuracy', cv=5, verbose=1, n_iter=50, random_state=1)
     grid_search.fit(X_train, Y_train)
     
+    # Save the accuracy of the current model
+    model_accuracies[model_name] = grid_search.best_score_
     # Check if this model is the best
     if grid_search.best_score_ > best_accuracy:
         best_accuracy = grid_search.best_score_
         best_model = grid_search.best_estimator_
         best_model_name = model_name
+    print("current best accuracy: " , best_accuracy)
 
 print(f"Best Model: {best_model_name} with accuracy: {best_accuracy}")
 
@@ -169,9 +194,26 @@ best_model.fit(X_train, Y_train)
 Y_pred = best_model.predict(X_test)
 
 
-#exporting model
 
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl")
+
+#Preprocessing data for export
+X = df[Xcolumns]
+imp_mean = SimpleImputer(strategy='mean')
+X.loc[:,sscolumns] = imp_mean.fit_transform(X.loc[:,sscolumns])
+print('Data imputed')
+ss=preprocessing.StandardScaler()
+X.loc[:,sscolumns]=ss.fit_transform(X.loc[:,sscolumns])
+print('Data scaled')
+le=LabelEncoder()
+le.fit(y)
+y=le.transform(y)
+print('y labeled')
+best_model.fit(X,y)
+
+
+#exporting model and scalers
+
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelcomplex_oneyear.pkl")
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
 joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
 joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
@@ -196,4 +238,11 @@ importances = best_model.feature_importances_
 feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
 print(feature_importance_df.sort_values(by='Importance', ascending=False))
 
-feature_importance_df.to_csv(r"C:\Users\bence\OneDrive\Project derbi\feature_importance_oneyear.csv", index=False)
+feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\feature_importance_oneyear.csv", index=False)
+
+# Print the accuracy of each model at the end
+print("\nModel Accuracies:")
+for model_name, accuracy in model_accuracies.items():
+    print(f"{model_name}: {accuracy:.4f}")
+
+print(f"\nBest Model: {best_model_name} with accuracy: {best_accuracy:.4f}")
