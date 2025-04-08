@@ -36,8 +36,8 @@ Xcolumns = sscolumns
 df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 # Filter data
-df = df[df['rank'] != 0]
-df = df[df['rank'] != 20]
+df = df[df['km_time'] != 0]
+
 
 #df=df[df['id']>146717]
 
@@ -54,9 +54,12 @@ for i in range(1, 14):  # For competitor_1 to competitor_14
 for col in labelcolumns:
     df[col] = le.fit_transform(df[col].astype(str))
 
+# Drop rows where the target variable 'km_time' (y) is NaN
+df = df.dropna(subset=['km_time'])
+
 # Assign X and y
 X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
-y = df['rank']
+y = df['km_time']
 
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
@@ -76,19 +79,18 @@ ss = StandardScaler()
 X_train.loc[:, sscolumns] = ss.fit_transform(X_train.loc[:, sscolumns])
 X_test.loc[:, sscolumns] = ss.transform(X_test.loc[:, sscolumns])
 
-# Encode target variable
-le = LabelEncoder()
-Y_train = le.fit_transform(Y_train)
-Y_test = le.transform(Y_test)
+
 
 # Define models
+# Define regression models
 # Define regression models
 models = {
     "LightGBM": LGBMRegressor(random_state=1),
     "HistGradientBoosting": HistGradientBoostingRegressor(random_state=1),
+    "XGBoost": XGBRegressor(random_state=1),
+    "KNeighbors": KNeighborsRegressor(),
+    "MLP": MLPRegressor(random_state=1, max_iter=1000),
 }
-
-
 
 # Define parameter distributions for RandomizedSearchCV
 param_distributions = {
@@ -105,7 +107,24 @@ param_distributions = {
         'learning_rate': [0.01, 0.05, 0.1, 0.2],
         'min_samples_leaf': [10, 20, 30],
         'l2_regularization': [0.0, 0.1, 1.0],
-    }
+    },
+    "XGBoost": {
+        'n_estimators': [50, 100, 200],
+        'max_depth': [3, 5, 10],
+        'learning_rate': [0.01, 0.05, 0.1, 0.2],
+        'subsample': [0.6, 0.8, 1.0],
+    },
+    "KNeighbors": {
+        'n_neighbors': [3, 5, 7, 10],
+        'weights': ['uniform', 'distance'],
+        'metric': ['euclidean', 'manhattan'],
+    },
+    "MLP": {
+        'hidden_layer_sizes': [(50,), (100,), (50, 50)],
+        'activation': ['relu', 'tanh'],
+        'alpha': [0.0001, 0.001, 0.01],
+        'learning_rate': ['constant', 'adaptive'],
+    },
 }
 
 # Initialize variables to store the best model
