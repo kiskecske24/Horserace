@@ -29,5 +29,7 @@ my_venv\Scripts\activate
 3. install required packages
 
 ```bash
-pip install --user -r requirements.txt
+pip install -r requirements.txt
 ```
+
+4. place data files
