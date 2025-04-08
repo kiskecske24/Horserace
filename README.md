@@ -20,11 +20,11 @@ cd Horserace
 
 2. set up venv
 ```bash
-python -m venv venv
+python -m venv my_venv
 # On macOS/Linux:
-source venv/bin/activate
+source my_venv/bin/activate
 # On Windows:
-venv\Scripts\activate
+my_venv\Scripts\activate
 ```
 3. install required packages
 
