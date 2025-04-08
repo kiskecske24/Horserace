@@ -9,10 +9,19 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, accuracy_score, confusion_matrix
 import joblib
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn import svm
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
 
 # Define columns
 sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
@@ -23,7 +32,7 @@ sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'jockey_wins_1y', 'horse_wins_percent_1y',
              'horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
 
-categoricalcolumns = ['race_length']
+categoricalcolumns = ['race_length','horse_age']
 labelcolumns=['horse_id', 'stable_id', 'jockey_id']
 
 
@@ -38,6 +47,7 @@ df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 
 df = df[df['rank'] != 0]
+
 #df = df[(df["id"] > 146717)]
 
 # Handle missing values in competitor columns (if any)
@@ -101,39 +111,9 @@ Y_train=le.transform(Y_train)
 Y_test=le.transform(Y_test)
 print('y labeled')
 
-# Define parameter grid for RandomForestClassifier
-param_distributions = {
-    'n_estimators': [50, 100, 200],
-    'max_depth': [10, 20, 50, None],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4],
-    'max_features': ['sqrt', 'log2', None]
-}
-
-# Initialize the RandomForestClassifier
-rf_model = RandomForestClassifier(random_state=1, class_weight='balanced')
-
-# Set up RandomizedSearchCV
-random_search = RandomizedSearchCV(
-    estimator=rf_model,
-    param_distributions=param_distributions,
-    scoring='accuracy',
-    cv=5,  # 5-fold cross-validation
-    verbose=1,
-    n_jobs=-1,  # Use all available CPU cores
-    n_iter=50,  # Number of random combinations to try
-    random_state=1  # For reproducibility
-)
-
-# Fit RandomizedSearchCV
-print("Starting Randomized Search...")
-random_search.fit(X_train, Y_train)
-
-# Get the best model and parameters
-best_model = random_search.best_estimator_
-print("Best Parameters:", random_search.best_params_)
-print("Best Cross-Validation Accuracy:", random_search.best_score_)
-
+best_model = RandomForestClassifier(random_state=1, class_weight='balanced', n_estimators= 100, min_samples_split= 5,
+                                     min_samples_leaf=1, max_features= 'sqrt', max_depth= 10)
+best_model.fit(X_train, Y_train)
 # Evaluate the best model on the test set
 Y_pred = best_model.predict(X_test)
 print('Test Accuracy:', accuracy_score(Y_test, Y_pred))

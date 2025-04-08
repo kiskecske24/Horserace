@@ -113,7 +113,8 @@ print('y labeled')
 
 
 
-best_model=RandomForestClassifier(random_state=1, class_weight='balanced')
+best_model=RandomForestClassifier(random_state=1, class_weight='balanced', n_estimators= 100,
+               min_samples_split= 5, min_samples_leaf= 1, max_features= 'sqrt', max_depth=10)
 
 # Fit the best model
 best_model.fit(X_train, Y_train)
