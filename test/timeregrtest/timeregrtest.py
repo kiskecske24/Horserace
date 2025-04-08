@@ -36,7 +36,7 @@ Xcolumns = sscolumns
 df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 # Filter data
-df = df[df['km_time'] != 0]
+df = df[df['time'] != 0]
 
 
 #df=df[df['id']>146717]
@@ -55,11 +55,11 @@ for col in labelcolumns:
     df[col] = le.fit_transform(df[col].astype(str))
 
 # Drop rows where the target variable 'km_time' (y) is NaN
-df = df.dropna(subset=['km_time'])
+df = df.dropna(subset=['time'])
 
 # Assign X and y
 X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
-y = df['km_time']
+y = df['time']
 
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
