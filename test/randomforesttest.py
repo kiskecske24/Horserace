@@ -113,6 +113,7 @@ print('y labeled')
 
 best_model = RandomForestClassifier(random_state=1, class_weight='balanced', n_estimators= 100, min_samples_split= 5,
                                      min_samples_leaf=1, max_features= 'sqrt', max_depth= 10)
+
 best_model.fit(X_train, Y_train)
 # Evaluate the best model on the test set
 Y_pred = best_model.predict(X_test)
