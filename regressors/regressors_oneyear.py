@@ -134,10 +134,6 @@ param_distributions = {
 }
 
 models = {
-    'LinearRegression': (LinearRegression(), {
-        'fit_intercept': [True, False],  # Whether to calculate the intercept
-        'positive': [True, False]  # Ensure coefficients are positive
-    }),
     'Ridge': (Ridge(), {
         'alpha': [0.1, 1.0, 10.0],  # Regularization strength
         'fit_intercept': [True, False]
@@ -200,7 +196,7 @@ model_r2_scores = {}
 
 for model_name, (model, param_distributions) in models.items():
     print(f"Training {model_name}...")
-    grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_distributions, scoring='r2', cv=5, verbose=1, n_iter=50, random_state=1)
+    grid_search = RandomizedSearchCV(estimator=model, param_distributions=param_distributions, scoring='r2', cv=5, verbose=1, n_iter=5, random_state=1)
     grid_search.fit(X_train, Y_train)
     
     # Save the R² score of the current model

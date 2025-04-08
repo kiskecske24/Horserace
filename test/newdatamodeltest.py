@@ -11,6 +11,8 @@ from sklearn.metrics import r2_score, accuracy_score, confusion_matrix
 import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 
 # Define columns
 sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
@@ -99,10 +101,70 @@ Y_train=le.transform(Y_train)
 Y_test=le.transform(Y_test)
 print('y labeled')
 
-# Train RandomForest model
-best_model = RandomForestClassifier(random_state=1, class_weight='balanced')
-best_model.fit(X_train, Y_train)
+# Define parameter grid for RandomForestClassifier
+param_distributions = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [10, 20, 50, None],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': ['sqrt', 'log2', None]
+}
+
+# Initialize the RandomForestClassifier
+rf_model = RandomForestClassifier(random_state=1, class_weight='balanced')
+
+# Set up RandomizedSearchCV
+random_search = RandomizedSearchCV(
+    estimator=rf_model,
+    param_distributions=param_distributions,
+    scoring='accuracy',
+    cv=5,  # 5-fold cross-validation
+    verbose=1,
+    n_jobs=-1,  # Use all available CPU cores
+    n_iter=50,  # Number of random combinations to try
+    random_state=1  # For reproducibility
+)
+
+# Fit RandomizedSearchCV
+print("Starting Randomized Search...")
+random_search.fit(X_train, Y_train)
+
+# Get the best model and parameters
+best_model = random_search.best_estimator_
+print("Best Parameters:", random_search.best_params_)
+print("Best Cross-Validation Accuracy:", random_search.best_score_)
+
+# Evaluate the best model on the test set
 Y_pred = best_model.predict(X_test)
+print('Test Accuracy:', accuracy_score(Y_test, Y_pred))
+print('Confusion Matrix:\n', confusion_matrix(Y_test, Y_pred))
+
+# Export model and preprocessing objects
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear_randomsearch.pkl")
+joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
+joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
+print('Model and scalers exported')
+
+# Evaluate model
+print('R2 Score:', r2_score(Y_test, Y_pred))
+print('Accuracy Score:', accuracy_score(Y_test, Y_pred))
+print('Confusion Matrix:\n', confusion_matrix(Y_test, Y_pred))
+
+# Feature importance
+importances = best_model.feature_importances_
+feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
+print(feature_importance_df.sort_values(by='Importance', ascending=False))
+
+# Save feature importance
+feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\randomforestfeature_importance_oneyear_randomsearch.csv", index=False)
+
+# Train with whole dataset
+X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
+y = df['top4']
+y = le.fit_transform(y)
+best_model.fit(X, y)
+
+print('Model trained with whole dataset')
 
 # Export model and preprocessing objects
 joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl")
