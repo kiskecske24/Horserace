@@ -37,6 +37,9 @@ df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 # Filter data
 df = df[df['rank'] != 0]
+df = df[df['rank'] != 20]
+
+#df=df[df['id']>146717]
 
 # Handle missing values in competitor columns (if any)
 for i in range(1, 14):  # For competitor_1 to competitor_14
@@ -53,7 +56,7 @@ for col in labelcolumns:
 
 # Assign X and y
 X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
-y = df['top4']
+y = df['rank']
 
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
@@ -81,14 +84,8 @@ Y_test = le.transform(Y_test)
 # Define models
 # Define regression models
 models = {
-    "RandomForest": RandomForestRegressor(random_state=1),
-    "XGBoost": XGBRegressor(random_state=1),
     "LightGBM": LGBMRegressor(random_state=1),
     "HistGradientBoosting": HistGradientBoostingRegressor(random_state=1),
-    "ExtraTrees": ExtraTreesRegressor(random_state=1),
-    "MLPRegressor": MLPRegressor(max_iter=500, random_state=1),
-    "SVR": SVR(),
-    "KNeighbors": KNeighborsRegressor()
 }
 
 # Train and evaluate each regression model
@@ -133,3 +130,15 @@ print('Preprocessing objects exported')
 # Export the best model
 joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\best_regression_model.pkl")
 print(f"Best model ({best_model_name}) exported")
+
+
+# Scatter plot of actual vs predicted values
+plt.figure(figsize=(10, 6))
+plt.scatter(Y_test, Y_pred, color='blue', label='Predicted vs Actual')
+plt.plot([Y_test.min(), Y_test.max()], [Y_test.min(), Y_test.max()], color='red', linestyle='--', label='Perfect Prediction')
+plt.title(f"Best Model: {best_model_name} (R2: {best_r2_score:.4f})")
+plt.xlabel("Actual Values")
+plt.ylabel("Predicted Values")
+plt.legend()
+plt.grid(True)
+plt.show()
