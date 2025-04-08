@@ -1,6 +1,6 @@
 # My Python Project
 
-A brief description of what your project does.
+This is a horse racing prediction AI project
 
 ## 🚀 Getting Started
 
