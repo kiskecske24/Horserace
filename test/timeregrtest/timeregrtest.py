@@ -64,6 +64,7 @@ y = df['time']
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
 encoded = ohe.fit_transform(df[categoricalcolumns])
+features = ohe.categories_
 X = pd.concat([X, encoded], axis=1)
 
 # Split data
@@ -88,8 +89,6 @@ models = {
     "LightGBM": LGBMRegressor(random_state=1),
     "HistGradientBoosting": HistGradientBoostingRegressor(random_state=1),
     "XGBoost": XGBRegressor(random_state=1),
-    "KNeighbors": KNeighborsRegressor(),
-    "MLP": MLPRegressor(random_state=1, max_iter=1000),
 }
 
 # Define parameter distributions for RandomizedSearchCV
@@ -113,17 +112,6 @@ param_distributions = {
         'max_depth': [3, 5, 10],
         'learning_rate': [0.01, 0.05, 0.1, 0.2],
         'subsample': [0.6, 0.8, 1.0],
-    },
-    "KNeighbors": {
-        'n_neighbors': [3, 5, 7, 10],
-        'weights': ['uniform', 'distance'],
-        'metric': ['euclidean', 'manhattan'],
-    },
-    "MLP": {
-        'hidden_layer_sizes': [(50,), (100,), (50, 50)],
-        'activation': ['relu', 'tanh'],
-        'alpha': [0.0001, 0.001, 0.01],
-        'learning_rate': ['constant', 'adaptive'],
     },
 }
 
@@ -168,6 +156,9 @@ print(f"R2 Score: {best_r2_score}")
 
 # Export the best model
 joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\best_regression_model_randomsearch.pkl")
+joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\scaler.pkl")
+joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
+joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer.pkl")
 print(f"Best model ({best_model_name}) exported")
 
 # Scatter plot of actual vs predicted values for the best model
@@ -181,3 +172,20 @@ plt.ylabel("Predicted Values")
 plt.legend()
 plt.grid(True)
 plt.show()
+
+# Print most important features (if supported by the model)
+if hasattr(best_model, "feature_importances_"):
+    importances = best_model.feature_importances_
+    feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
+    feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
+    
+    # Print top 10 features
+    print("\nMost Important Features:")
+    print(feature_importance_df.head(10))  # Print top 10 features
+    
+    # Export feature importance to a CSV file
+    feature_importance_csv_path = r"C:\Users\bence\projectderbiuj\data\feature_importance.csv"
+    feature_importance_df.to_csv(feature_importance_csv_path, index=False)
+    print(f"\nFeature importance exported to {feature_importance_csv_path}")
+else:
+    print("\nThe best model does not support feature importance.")

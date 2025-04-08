@@ -35,6 +35,7 @@ df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 # Filter data
 df = df[df['rank'] != 0]
+df = df[df['rank'] != 20]
 
 # Handle missing values in competitor columns (if any)
 for i in range(1, 14):  # For competitor_1 to competitor_14
@@ -51,7 +52,7 @@ for col in labelcolumns:
 
 # Assign X and y
 X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
-y = df['top4']
+y = df['rank']
 
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
@@ -84,25 +85,47 @@ models = {
     "HistGradientBoosting": HistGradientBoostingClassifier(random_state=1),
     "ExtraTrees": ExtraTreesClassifier(random_state=1),
     "MLPClassifier": MLPClassifier(max_iter=500, random_state=1),
-    "SVC": SVC(probability=True, random_state=1),
     "KNeighbors": KNeighborsClassifier(),
     "LogisticRegression": LogisticRegression(random_state=1, max_iter=500)
 }
+
+# Track the best model
+best_model_name = None
+best_model = None
+best_accuracy = 0
 
 # Train and evaluate each model
 for name, model in models.items():
     print(f"\nTraining {name}...")
     model.fit(X_train, Y_train)
     Y_pred = model.predict(X_test)
-    print(f"{name} Test Accuracy: {accuracy_score(Y_test, Y_pred)}")
+    accuracy = accuracy_score(Y_test, Y_pred)
+    print(f"{name} Test Accuracy: {accuracy}")
     print(f"{name} Confusion Matrix:\n{confusion_matrix(Y_test, Y_pred)}")
+    
+    # Check for feature importances
     if hasattr(model, "feature_importances_"):
         importances = model.feature_importances_
         feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
         print(f"{name} Feature Importances:\n{feature_importance_df.sort_values(by='Importance', ascending=False)}")
+    
+    # Update the best model if this model performs better
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+        best_model_name = name
+        best_model = model
+
+# Print the best model
+print("\nBest Model:")
+print(f"Model Name: {best_model_name}")
+print(f"Test Accuracy: {best_accuracy}")
 
 # Export preprocessing objects
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
 joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
 joblib.dump(ohe, r"C:\Users\bence\projectderbiuj\models\onehotencoder_oneyear.pkl")
 print('Preprocessing objects exported')
+
+# Export the best model
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\best_classification_model.pkl")
+print(f"Best model ({best_model_name}) exported")

@@ -191,7 +191,9 @@ def getresults():
 
     filtered_df = df[df['race_id'] == race_id]
     X=filtered_df[Xcolumns]
+
     encoded = ohe.fit_transform(df[categoricalcolumns])
+    
     X=pd.concat([X,encoded], axis=1)
     X.loc[:,sscolumns] = imp_mean.transform(X.loc[:,sscolumns])
     X.loc[:,sscolumns]=ss.fit_transform(X.loc[:,sscolumns])
