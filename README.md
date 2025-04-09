@@ -32,4 +32,7 @@ my_venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. place data files
+4. place data files into data folder
+- merged_output.csv
+- querynewtop4.csv
+- trotting1012.db
