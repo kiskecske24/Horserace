@@ -7,6 +7,7 @@ from sklearn import preprocessing
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import r2_score, accuracy_score, confusion_matrix
 import joblib
 from sklearn.model_selection import RandomizedSearchCV
@@ -19,6 +20,8 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import ExtraTreesRegressor
 
+
+
 # Define columns
 sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -29,14 +32,26 @@ sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
 
 categoricalcolumns = ['race_length', 'horse_age']
+
 labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
+
 Xcolumns = sscolumns
 
 # Load data
 df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 # Filter data
+
+#df =df[df['id'] >98735] #2010
+
+
+df = df[df["id"]>146717] #2020
+
+#df = df[df["id"]>153503] #2022
+
+df=df[df['rank']!=0]
 df = df[df['time'] != 0]
+
 
 
 #df=df[df['id']>146717]
@@ -59,7 +74,12 @@ df = df.dropna(subset=['time'])
 
 # Assign X and y
 X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
-y = df['time']
+
+ss=StandardScaler()
+df.loc[:, 'km_time_new'] = ss.fit_transform(df.loc[:, 'km_time_new'].values.reshape(-1, 1))
+y = df['km_time_new']
+
+
 
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
@@ -85,62 +105,62 @@ X_test.loc[:, sscolumns] = ss.transform(X_test.loc[:, sscolumns])
 # Define models
 # Define regression models
 # Define regression models
+# Add CatBoostRegressor to the models dictionary
 models = {
     "LightGBM": LGBMRegressor(random_state=1),
     "HistGradientBoosting": HistGradientBoostingRegressor(random_state=1),
     "XGBoost": XGBRegressor(random_state=1),
 }
 
-# Define parameter distributions for RandomizedSearchCV
+# Add CatBoostRegressor hyperparameters to the grid
 param_distributions = {
     "LightGBM": {
-        'n_estimators': [50, 100, 200, 500],
-        'max_depth': [3, 5, 10, -1],  # -1 means no limit in LightGBM
-        'learning_rate': [0.01, 0.05, 0.1, 0.2],
-        'num_leaves': [20, 31, 50, 100],
-        'min_child_samples': [10, 20, 30],
+        'n_estimators': [500],
+        'max_depth': [-1],  # -1 means no limit in LightGBM
+        'learning_rate': [0.05],
+        'num_leaves': [50],
+        'min_child_samples': [10],
     },
     "HistGradientBoosting": {
-        'max_iter': [100, 200, 500],
-        'max_depth': [3, 5, 10, None],
-        'learning_rate': [0.01, 0.05, 0.1, 0.2],
-        'min_samples_leaf': [10, 20, 30],
-        'l2_regularization': [0.0, 0.1, 1.0],
+        'max_iter': [500],
+        'max_depth': [10],
+        'learning_rate': [0.1],
+        'min_samples_leaf': [10],
+        'l2_regularization': [0.1],
     },
     "XGBoost": {
-        'n_estimators': [50, 100, 200],
-        'max_depth': [3, 5, 10],
-        'learning_rate': [0.01, 0.05, 0.1, 0.2],
-        'subsample': [0.6, 0.8, 1.0],
+        'n_estimators': [200],
+        'max_depth': [10],
+        'learning_rate': [0.05],
+        'subsample': [0.8],
     },
+
 }
 
-# Initialize variables to store the best model
+# Initialize variables to track the best model
+best_r2_score = float('-inf')  # Set to negative infinity to ensure any R2 score will be higher
 best_model_name = None
 best_model = None
-best_r2_score = float('-inf')
 
-# Perform RandomizedSearchCV for each model
+# Perform GridSearchCV for each model
 for name, model in models.items():
-    print(f"\nPerforming Randomized Search for {name}...")
-    random_search = RandomizedSearchCV(
+    print(f"\nPerforming Grid Search for {name}...")
+    grid_search = GridSearchCV(
         estimator=model,
-        param_distributions=param_distributions[name],
+        param_grid=param_distributions[name],  # Use param_distributions as param_grid
         scoring='r2',
         cv=5,  # 5-fold cross-validation
         verbose=1,
-        n_jobs=-1,  # Use all available CPU cores
-        n_iter=10,  # Number of random combinations to try
-        random_state=1  # For reproducibility
+        n_jobs=-1  # Use all available CPU cores
     )
-    random_search.fit(X_train, Y_train)
+    grid_search.fit(X_train, Y_train)
     
     # Get the best model and evaluate it
-    best_model_for_current = random_search.best_estimator_
+    best_model_for_current = grid_search.best_estimator_
     Y_pred = best_model_for_current.predict(X_test)
     r2 = r2_score(Y_test, Y_pred)
     
-    print(f"{name} Best Parameters: {random_search.best_params_}")
+    print(f"{name} Best Parameters: {grid_search.best_params_}")
     print(f"{name} R2 Score: {r2}")
     
     # Update the best model if this model performs better
@@ -155,7 +175,7 @@ print(f"Model Name: {best_model_name}")
 print(f"R2 Score: {best_r2_score}")
 
 # Export the best model
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\best_regression_model_randomsearch.pkl")
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\best_regression_model_gridsearch.pkl")
 joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\scaler.pkl")
 joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer.pkl")
@@ -164,7 +184,7 @@ print(f"Best model ({best_model_name}) exported")
 # Scatter plot of actual vs predicted values for the best model
 Y_pred = best_model.predict(X_test)
 plt.figure(figsize=(10, 6))
-plt.scatter(Y_test, Y_pred, color='blue', label='Predicted vs Actual')
+plt.scatter(Y_test, Y_pred, color='blue', s=10, label='Predicted vs Actual')  # Adjusted the size with 's=10'
 plt.plot([Y_test.min(), Y_test.max()], [Y_test.min(), Y_test.max()], color='red', linestyle='--', label='Perfect Prediction')
 plt.title(f"Best Model: {best_model_name} (R2: {best_r2_score:.4f})")
 plt.xlabel("Actual Values")

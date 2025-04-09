@@ -148,7 +148,9 @@ sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
 
 categoricalcolumns = ['race_length', 'horse_age']
+
 labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
+
 Xcolumns = sscolumns
 
 conn = sqlite3.connect(r'C:\Users\bence\projectderbiuj\data\trotting1012.db')
@@ -172,7 +174,7 @@ for x in range(0,2):
     df[labelcolumns[x]]=le.fit_transform(df[labelcolumns[x]].astype(str))
 
 def getresults():
-    race_id=18284
+    race_id = 18284
     ohe = OneHotEncoder(categories=features, handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
     
     filtered_df = df[df['race_id'] == race_id]
@@ -183,27 +185,31 @@ def getresults():
     le = LabelEncoder()
     for i in range(1, 14):  # For competitor_1 to competitor_14
         df[f'competitor_{i}'] = le.fit_transform(df[f'competitor_{i}'].astype(str))
-    X=filtered_df[Xcolumns+ [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
+    
+    X = filtered_df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
 
     encoded = ohe.fit_transform(df[categoricalcolumns])
+    X = pd.concat([X, encoded], axis=1)
+    X.loc[:, sscolumns] = imp_mean.transform(X.loc[:, sscolumns])
+    X.loc[:, sscolumns] = ss.fit_transform(X.loc[:, sscolumns])
 
-    X=pd.concat([X,encoded], axis=1)
-    X.loc[:,sscolumns] = imp_mean.transform(X.loc[:,sscolumns])
-    X.loc[:,sscolumns]=ss.fit_transform(X.loc[:,sscolumns])
-
-    originaldatabase=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\merged_output.csv')
-
+    originaldatabase = pd.read_csv(r'C:\Users\bence\projectderbiuj\data\merged_output.csv')
     fornumberdatabase = originaldatabase[originaldatabase['race_id'] == race_id]
 
-    Y_pred=best_model.predict(X)
+    Y_pred = best_model.predict(X)
 
-    numbers=fornumberdatabase.number.tolist()
-    actual=fornumberdatabase['rank'].tolist()
+    numbers = fornumberdatabase.number.tolist()
+    actual = fornumberdatabase['rank'].tolist()
 
-    for x in range(len(Y_pred)):
-        print('Number: ', numbers[x], 'Prediction: ', Y_pred[x], 'Actual: ', actual[x])
+    # Combine predictions, numbers, and actual values into a list of tuples
+    results = list(zip(numbers, Y_pred, actual))
+
+    # Sort the results by the 'prediction' column
+    results.sort(key=lambda x: x[1])
+
+    # Print the sorted results
+    print("\nResults in Increasing Order of Predictions:")
+    for number, prediction, actual in results:
+        print(f"Number: {number}, Prediction: {prediction}, Actual: {actual}")
+
 getresults()
-    
-
-
-
