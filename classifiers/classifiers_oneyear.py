@@ -28,9 +28,9 @@ from sklearn.svm import SVC
 from dotenv import load_dotenv
 from pathlib import Path
 
-import os
+project_root = Path(__file__).parent.parent 
 
-load_dotenv("../.env")
+import os
 
 sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
        'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -63,12 +63,7 @@ def getdata():
 
 
 
-project_path=os.getenv("PROJECT_PATH")
-print(project_path)
-csv_path = Path(__file__).parent.parent / "data" / "querynewtop4.csv"
-
-
-df=pd.read_csv(csv_path)
+df=pd.read_csv(project_root / "data" / "querynewtop4.csv")
 
 #getting dummies
 
