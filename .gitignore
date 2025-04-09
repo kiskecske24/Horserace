@@ -1,2 +1,7 @@
 my_venv
+<<<<<<< HEAD
 data
+=======
+data/*
+models
+>>>>>>> 4132397e35eda3009052e6639f619817a91f0cd8
