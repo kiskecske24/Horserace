@@ -16,6 +16,9 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
 
+from pathlib import Path
+
+project_root = model_dir = Path(__file__).resolve().parent.parent
 
 sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
        'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -52,7 +55,8 @@ def getdata():
 
 
 
-df=pd.read_csv('querynewtop5.csv')
+
+df=pd.read_csv(project_root / "data" / 'querynewtop5.csv')
 
 df=df.drop(df[df['rank']==20].index)
 df = df[df["id"]>146717]
@@ -91,8 +95,9 @@ randomf=RandomForestClassifier()
 randomf.fit(X,y)
 print('model fitted')
 #exporting model
-joblib.dump(randomf, 'randomf_oneyear.pkl')
-joblib.dump(imp_mean, 'imputer_oneyear.pkl')
-joblib.dump(ss, 'standardscaler_oneyear.pkl')
+models_root = project_root / "models"
+joblib.dump(randomf, models_root / 'randomf_oneyear.pkl')
+joblib.dump(imp_mean, models_root / 'imputer_oneyear.pkl')
+joblib.dump(ss, models_root / 'standardscaler_oneyear.pkl')
 print('model and scalers exported')
 

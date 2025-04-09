@@ -1,9 +1,9 @@
-sqlite3
 pandas
 numpy
 matplotlib
-sklearn
+scikit-learn
 joblib
 xgboost
 scipy
 lightgbm
+python-dotenv

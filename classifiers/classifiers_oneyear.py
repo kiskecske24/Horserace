@@ -25,6 +25,12 @@ from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 
+from dotenv import load_dotenv
+from pathlib import Path
+
+project_root = Path(__file__).parent.parent 
+
+import os
 
 sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
        'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -57,8 +63,7 @@ def getdata():
 
 
 
-
-df=pd.read_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv")
+df=pd.read_csv(project_root / "data" / "querynewtop4.csv")
 
 #getting dummies
 
@@ -206,11 +211,13 @@ best_model.fit(X,y)
 
 
 #exporting model and scalers
+model_dir = Path(__file__).resolve().parent / "models"
 
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\classifiers_oneyear.pkl")
-joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
-joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
-joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
+
+joblib.dump(best_model, model_dir / "classifiers_oneyear.pkl")
+joblib.dump(imp_mean, model_dir / "imputer_oneyear.pkl")
+joblib.dump(ss, model_dir / "standardscaler_oneyear.pkl")
+joblib.dump(features, model_dir / "features_oneyear.pkl")
 print('model and scalers exported')
 
 #plotting data

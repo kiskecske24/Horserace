@@ -1,3 +1,4 @@
 my_venv
 data/*
-models
+models/*
+.env

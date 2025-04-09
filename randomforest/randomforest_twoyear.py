@@ -17,6 +17,10 @@ from sklearn.compose import make_column_transformer
 from sklearn.ensemble import RandomForestClassifier
 
 
+from pathlib import Path
+
+project_root = model_dir = Path(__file__).resolve().parent.parent
+
 
 sscolumns=['horse_prize_1y', 'horse_prize_2y',
        'horse_avg_km_time_2y', 'horse_avg_km_time_3y', 'horse_avg_km_time_6m',
@@ -56,11 +60,11 @@ Xcolumns=['horse_prize_1y', 'horse_prize_2y',
 
 #getting data
 def getdata():
-    conn = sqlite3.connect("trottingnew1012.db")
+    conn = sqlite3.connect(project_root / "data" / "trottingnew1012.db")
     query = "SELECT * FROM horse_races_aggregated WHERE race_id>146717"
     df = pd.read_sql_query(query, conn)
     conn.close()
-    df.to_csv(r"C:\Users\bence\OneDrive\projectderbiuj\querynew2020.csv", index=False)
+    df.to_csv(project_root / "data" / "querynew2020.csv", index=False)
     df.drop(df.loc[df['rank']==0].index, inplace=True)
 
 
@@ -115,10 +119,12 @@ model_fit.fit(X_train, Y_train)
 Y_pred = model_fit.predict(X_test)
 print('model fitted')
 #exporting model
-joblib.dump(model_fit, 'modelmlp_oneyear.pkl')
-joblib.dump(imp_mean, 'imputer_oneyear.pkl')
-joblib.dump(ss, 'standardscaler_oneyear.pkl')
-joblib.dump(features,'features_oneyear.pkl')
+models_root = project_root / "models"
+
+joblib.dump(model_fit, models_root / 'modelmlp_oneyear.pkl')
+joblib.dump(imp_mean, models_root / 'imputer_oneyear.pkl')
+joblib.dump(ss, models_root / 'standardscaler_oneyear.pkl')
+joblib.dump(features, models_root / 'features_oneyear.pkl')
 print('model and scalers exported')
 #plotting data
 print(Y_test)
