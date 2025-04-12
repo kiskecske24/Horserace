@@ -35,7 +35,7 @@ df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 # Filter data
 df = df[df['rank'] != 0]
-df = df[df['rank'] != 20]
+df = df[df['rank'] >14]
 
 # Handle missing values in competitor columns (if any)
 for i in range(1, 14):  # For competitor_1 to competitor_14
@@ -53,6 +53,9 @@ for col in labelcolumns:
 # Assign X and y
 X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
 y = df['rank']
+
+le=LabelEncoder()
+y = le.fit_transform(y.astype(str))
 
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
@@ -82,7 +85,6 @@ models = {
     "RandomForest": RandomForestClassifier(random_state=1, class_weight='balanced'),
     "XGBoost": XGBClassifier(random_state=1, use_label_encoder=False, eval_metric='logloss'),
     "LightGBM": LGBMClassifier(random_state=1),
-    "HistGradientBoosting": HistGradientBoostingClassifier(random_state=1),
     "ExtraTrees": ExtraTreesClassifier(random_state=1),
     "MLPClassifier": MLPClassifier(max_iter=500, random_state=1),
     "KNeighbors": KNeighborsClassifier(),
@@ -98,10 +100,10 @@ best_accuracy = 0
 for name, model in models.items():
     print(f"\nTraining {name}...")
     model.fit(X_train, Y_train)
-    Y_pred = model.predict(X_test)
-    accuracy = accuracy_score(Y_test, Y_pred)
-    print(f"{name} Test Accuracy: {accuracy}")
-    print(f"{name} Confusion Matrix:\n{confusion_matrix(Y_test, Y_pred)}")
+    Y_pred = model.predict_proba(X_test)
+    #accuracy = accuracy_score(Y_test, Y_pred)
+    #print(f"{name} Test Accuracy: {accuracy}")
+    #print(f"{name} Confusion Matrix:\n{confusion_matrix(Y_test, Y_pred)}")
     
     # Check for feature importances
     if hasattr(model, "feature_importances_"):
@@ -109,16 +111,13 @@ for name, model in models.items():
         feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
         print(f"{name} Feature Importances:\n{feature_importance_df.sort_values(by='Importance', ascending=False)}")
     
-    # Update the best model if this model performs better
-    if accuracy > best_accuracy:
-        best_accuracy = accuracy
-        best_model_name = name
-        best_model = model
 
-# Print the best model
-print("\nBest Model:")
-print(f"Model Name: {best_model_name}")
-print(f"Test Accuracy: {best_accuracy}")
+
+# Print predicted probabilities compared to real values
+print("\nPredicted Probabilities vs Real Values:")
+probabilities = best_model.predict(X_test)
+for i in range(len(Y_test)):
+    print(f"Actual: {Y_test[i]}, Predicted Probabilities: {probabilities[i]}")
 
 # Export preprocessing objects
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")

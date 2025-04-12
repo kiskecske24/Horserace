@@ -23,12 +23,12 @@ from sklearn.ensemble import ExtraTreesRegressor
 
 
 # Define columns
-sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
+sscolumns = ['horse_avg_km_time_6m',
              'horse_avg_km_time_12m', 'horse_min_km_time_6m',
              'horse_min_km_time_12m', 'horse_min_km_time_improve_12m',
              'horse_avg_km_time_improve_12m', 'horse_gals_1y',
              'horse_wins_1y', 'horse_podiums_1y', 'horse_fizetos_1y',
-             'jockey_wins_1y', 'horse_wins_percent_1y',
+             'jockey_wins_1y', 'horse_wins_percent_1y','horse_prize_1y', 
              'horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
 
 categoricalcolumns = ['race_length', 'horse_age']
@@ -76,8 +76,8 @@ df = df.dropna(subset=['time'])
 X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
 
 ss=StandardScaler()
-df.loc[:, 'km_time_new'] = ss.fit_transform(df.loc[:, 'km_time_new'].values.reshape(-1, 1))
-y = df['km_time_new']
+#df.loc[:, 'time'] = ss.fit_transform(df.loc[:, 'time'].values.reshape(-1, 1))
+y = df['time']
 
 
 
@@ -88,7 +88,7 @@ features = ohe.categories_
 X = pd.concat([X, encoded], axis=1)
 
 # Split data
-X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
+X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, shuffle=False, random_state=1)
 
 # Impute missing values
 imp_mean = SimpleImputer(strategy='mean')
@@ -184,7 +184,7 @@ print(f"Best model ({best_model_name}) exported")
 # Scatter plot of actual vs predicted values for the best model
 Y_pred = best_model.predict(X_test)
 plt.figure(figsize=(10, 6))
-plt.scatter(Y_test, Y_pred, color='blue', s=10, label='Predicted vs Actual')  # Adjusted the size with 's=10'
+plt.scatter(Y_test, Y_pred, color='blue', s=5, label='Predicted vs Actual')  # Adjusted the size with 's=10'
 plt.plot([Y_test.min(), Y_test.max()], [Y_test.min(), Y_test.max()], color='red', linestyle='--', label='Perfect Prediction')
 plt.title(f"Best Model: {best_model_name} (R2: {best_r2_score:.4f})")
 plt.xlabel("Actual Values")

@@ -14,7 +14,7 @@ def getdata():
             h.id AS horse_id
         FROM races r
         CROSS JOIN horses h
-        LEFT JOIN horse_races hr ON hr.race_id = r.id AND hr.horse_id = h.id
+        LEFT JOIN horse_races_aggregated hr ON hr.race_id = r.id AND hr.horse_id = h.id
         WHERE hr.horse_id IS NOT NULL
         """
         

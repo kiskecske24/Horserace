@@ -8,7 +8,7 @@ from sklearn.preprocessing import OneHotEncoder
 import joblib
 
 # Load pre-trained model and preprocessing objects
-best_model = joblib.load(r'C:\Users\bence\projectderbiuj\models\best_regression_model_gridsearch.pkl')
+best_model = joblib.load(r'C:\Users\bence\projectderbiuj\models\classprob_model.pkl')
 imp_mean = joblib.load(r'C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl')
 ss = joblib.load(r'C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl')
 ohe = joblib.load(r'C:\Users\bence\projectderbiuj\models\onehotencoder_oneyear.pkl')  # Load pre-fitted OneHotEncoder
@@ -64,26 +64,29 @@ def getresults(race_id):
     X, filtered_df = preprocess_data(df, race_id)
 
     # Make predictions
-    Y_pred = best_model.predict(X)  # Predicted continuous values
+    Y_pred_proba = best_model.predict_proba(X)  # Predicted probabilities
 
     # Get additional information for display
     numbers = filtered_df['number'].tolist()
     actual = filtered_df['rank'].tolist()
 
+    # Calculate the sum of probabilities for being in the 1-4 range
+    prob_1_to_4 = Y_pred_proba[:, :4].sum(axis=1)  # Sum probabilities for classes 1, 2, 3, and 4
+
     # Combine results into a DataFrame
     results_df = pd.DataFrame({
         'Number': numbers,
         'Actual Rank': actual,
-        'Predicted Value': Y_pred
+        'Prob 1-4': prob_1_to_4
     })
 
-    # Sort the DataFrame by the predicted value (ascending order)
-    results_df = results_df.sort_values(by='Predicted Value')
+    # Sort the DataFrame by the sum of probabilities for being in the 1-4 range (descending order)
+    results_df = results_df.sort_values(by='Prob 1-4', ascending=False)
 
     # Display results
-    print("\nResults (Ordered by Predicted Value):")
+    print("\nResults (Ordered by Probability of Being in 1-4 Range):")
     for _, row in results_df.iterrows():
-        print(f"Number: {row['Number']}, Predicted Value: {row['Predicted Value']:.4f}, Actual Rank: {row['Actual Rank']}")
+        print(f"Number: {row['Number']}, Prob 1-4: {row['Prob 1-4']:.4f}, Actual Rank: {row['Actual Rank']}")
 
 # Call the function with a specific race_id
 getresults(race_id=18284)
