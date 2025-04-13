@@ -149,16 +149,17 @@ columns=['horse_id','dividend','jockey_id','km_time','rank','prize',
          'horse_wins_percent_1y','horse_wins_percent_2y','horse_wins_percent_3y','horse_podiums_percent_1y','horse_podiums_percent_2y',
          'horse_podiums_percent_3y','horse_fizetos_percent_1y','horse_fizetos_percent_2y','horse_fizetos_percent_3y']
 
-sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
-       'horse_avg_km_time_12m', 'horse_min_km_time_6m',
-       'horse_min_km_time_12m',
-       'horse_min_km_time_improve_12m',
-       'horse_avg_km_time_improve_12m',
-       'horse_gals_1y', 'horse_wins_1y',
-       'horse_podiums_1y','horse_fizetos_1y','jockey_wins_1y',
-       'horse_wins_percent_1y','horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
+sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
+             'horse_avg_km_time_12m', 'horse_min_km_time_6m',
+             'horse_min_km_time_12m', 'horse_min_km_time_improve_12m',
+             'horse_avg_km_time_improve_12m', 'horse_gals_1y',
+             'horse_wins_1y', 'horse_podiums_1y', 'horse_fizetos_1y',
+             'jockey_wins_1y', 'horse_wins_percent_1y',
+             'horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
 
-categoricalcolumns=['number','race_length','horse_id','stable_id','jockey_id' ]
+categoricalcolumns = ['race_length', 'horse_age']
+
+labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
 
 Xcolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
        'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -188,10 +189,24 @@ df=pd.read_csv(r'C:\Users\bence\projectderbiuj\data\merged_output.csv')
 def getresults():
     race_id=18284
     ohe = OneHotEncoder(categories=features, handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
+    # Handle missing values in competitor columns (if any)
+    for i in range(1, 14):  # For competitor_1 to competitor_14
+      df[f'competitor_{i}'].fillna(-1, inplace=True)  # Fill missing values with -1
 
+    # Apply Label Encoding to competitor columns
+    le = LabelEncoder()
+    for i in range(1, 14):  # For competitor_1 to competitor_14
+      df[f'competitor_{i}'] = le.fit_transform(df[f'competitor_{i}'].astype(str))
+
+    # Apply Label Encoding to label columns
+    for col in labelcolumns:
+      df[col] = le.fit_transform(df[col].astype(str))
     filtered_df = df[df['race_id'] == race_id]
-    X=filtered_df[Xcolumns]
+    X=filtered_df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
+
     encoded = ohe.fit_transform(df[categoricalcolumns])
+    
+    
     X=pd.concat([X,encoded], axis=1)
     X.loc[:,sscolumns] = imp_mean.transform(X.loc[:,sscolumns])
     X.loc[:,sscolumns]=ss.fit_transform(X.loc[:,sscolumns])

@@ -14,7 +14,7 @@ def getdata():
             h.id AS horse_id
         FROM races r
         CROSS JOIN horses h
-        LEFT JOIN horse_races hr ON hr.race_id = r.id AND hr.horse_id = h.id
+        LEFT JOIN horse_races_aggregated hr ON hr.race_id = r.id AND hr.horse_id = h.id
         WHERE hr.horse_id IS NOT NULL
         """
         
@@ -30,20 +30,25 @@ def getdata():
         # Group by race_id and collect horse IDs into lists
         grouped = df.groupby('race_id')['horse_id'].apply(list).reset_index()
         
+        # Add a new column for the number of horses in each race
+        grouped['num_horses'] = grouped['horse_id'].apply(len)
+        
         # Expand the grouped DataFrame to include competitor columns
         expanded_rows = []
         for _, row in grouped.iterrows():
             race_id = row['race_id']
             horse_ids = row['horse_id']
+            num_horses = row['num_horses']  # Number of horses in the race
             for horse_id in horse_ids:
                 # Exclude the current horse_id from the competitors
                 competitors = [comp for comp in horse_ids if comp != horse_id]
                 # Limit to 14 competitors
                 competitors = competitors[:14]
-                # Create a row with race_id, horse_id, and competitor columns
+                # Create a row with race_id, horse_id, num_horses, and competitor columns
                 expanded_rows.append({
                     'race_id': race_id,
                     'horse_id': horse_id,
+                    'num_horses': num_horses,
                     **{f'competitor_{i+1}': competitors[i] if i < len(competitors) else None for i in range(14)}
                 })
         

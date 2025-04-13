@@ -15,115 +15,127 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
 from sklearn.ensemble import RandomForestClassifier
+from sklearn import preprocessing
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.model_selection import RandomizedSearchCV
 
 from pathlib import Path
 
 project_root = model_dir = Path(__file__).resolve().parent.parent
 
-sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
-       'horse_avg_km_time_12m', 'horse_min_km_time_6m',
-       'horse_min_km_time_12m',
-       'horse_min_km_time_improve_12m',
-       'horse_avg_km_time_improve_12m',
-       'horse_gals_1y', 'horse_wins_1y',
-       'horse_podiums_1y','horse_fizetos_1y','jockey_wins_1y',
-       'horse_wins_percent_1y','horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
+sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
+             'horse_avg_km_time_12m', 'horse_min_km_time_6m',
+             'horse_min_km_time_12m', 'horse_min_km_time_improve_12m',
+             'horse_avg_km_time_improve_12m', 'horse_gals_1y',
+             'horse_wins_1y', 'horse_podiums_1y', 'horse_fizetos_1y',
+             'jockey_wins_1y', 'horse_wins_percent_1y',
+             'horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
 
-categoricalcolumns=['number','race_length','horse_id','stable_id','jockey_id']
+categoricalcolumns = ['race_length', 'horse_age']
 
-Xcolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
-       'horse_avg_km_time_12m', 'horse_min_km_time_6m',
-       'horse_min_km_time_12m',
-       'horse_min_km_time_improve_12m',
-       'horse_avg_km_time_improve_12m',
-       'horse_gals_1y', 'horse_wins_1y',
-       'horse_podiums_1y','horse_fizetos_1y','jockey_wins_1y',
-       'horse_wins_percent_1y','horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
+labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
 
-#getting data
-def getdata():
-    conn = sqlite3.connect("trottingnew1012.db")
-    query = "SELECT * FROM horse_races_aggregated"
-    df = pd.read_sql_query(query, conn)
-    conn.close()
-    df.to_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv", index=False)
-    df.drop(df.loc[df['rank']==0].index, inplace=True)
+Xcolumns = sscolumns
+
+# Load data
+df=pd.read_csv(project_root / "data" / "merged_output.csv")
+
+# Filter data
+
+#df =df[df['id'] >98735] #2010
 
 
+df = df[df["id"]>146717] #2020
+
+#df = df[df["id"]>153503] #2022
+
+df=df[df['rank']!=0]
+df = df[df['time'] != 0]
 
 
-df=pd.read_csv(project_root / "data" / "querynewtop4.csv")
 
-#getting dummies
+#df=df[df['id']>146717]
+
+# Handle missing values in competitor columns (if any)
+for i in range(1, 14):  # For competitor_1 to competitor_14
+    df[f'competitor_{i}'].fillna(-1, inplace=True)  # Fill missing values with -1
+
+# Apply Label Encoding to competitor columns
+le = LabelEncoder()
+for i in range(1, 14):  # For competitor_1 to competitor_14
+    df[f'competitor_{i}'] = le.fit_transform(df[f'competitor_{i}'].astype(str))
+
+# Apply Label Encoding to label columns
+for col in labelcolumns:
+    df[col] = le.fit_transform(df[col].astype(str))
+
+# Drop rows where the target variable 'km_time' (y) is NaN
+df = df.dropna(subset=['time'])
+
+# Assign X and y
+X = df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns]
+
+ss=StandardScaler()
+y = df['top4']
 
 
-#df.to_csv(r"C:\Users\bence\OneDrive\Project derbi\lasttestwithdummies.csv", index=False)
 
-#reading data
+# One-Hot Encode categorical columns
+ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
+encoded = ohe.fit_transform(df[categoricalcolumns])
+features = ohe.categories_
+X = pd.concat([X, encoded], axis=1)
 
-df=df.drop(df[df['rank']==20].index)
-df = df[df["id"]>146717]
-df = df[df["id"]<161945]
+# Split data
+X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2, shuffle=True, random_state=1)
 
-print('Reading csv')
-X=df[Xcolumns]
-
-dummies=True
-#Assigning X
-def getdummies(df, X):
-       
-       ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
-       encoded = ohe.fit_transform(df[categoricalcolumns])
-       features = ohe.categories_
-       print('Got dummies')
-       X=pd.concat([X,encoded], axis=1)
-       print('Assigned X')
-       return X, features
-
-#Assigning y
-
-y=df['top4']
-print('Assigned y')
-
-#splitting data
-if dummies==True:
-       X, features = getdummies(df, X)
-       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
-else:
-       X_train, X_test, Y_train, Y_test=train_test_split(X,y, test_size=0.2, shuffle=False)
-       features=None
-print('Data splitted')
-
-#preprocessing data
-
+# Impute missing values
 imp_mean = SimpleImputer(strategy='mean')
-X_train.loc[:,sscolumns] = imp_mean.fit_transform(X_train.loc[:,sscolumns])
-X_test.loc[:,sscolumns] = imp_mean.transform(X_test.loc[:,sscolumns])
-print('Data imputed')
-ss=preprocessing.StandardScaler()
-X_train.loc[:,sscolumns]=ss.fit_transform(X_train.loc[:,sscolumns])
-X_test.loc[:,sscolumns]=ss.transform(X_test.loc[:,sscolumns])
-print('Data scaled')
-le=LabelEncoder()
-le.fit(Y_train)
-Y_train=le.transform(Y_train)
-Y_test=le.transform(Y_test)
-print('y labeled')
+X_train.loc[:, sscolumns] = imp_mean.fit_transform(X_train.loc[:, sscolumns])
+X_test.loc[:, sscolumns] = imp_mean.transform(X_test.loc[:, sscolumns])
 
-#fitting model
+# Scale numerical features
+ss = StandardScaler()
+X_train.loc[:, sscolumns] = ss.fit_transform(X_train.loc[:, sscolumns])
+X_test.loc[:, sscolumns] = ss.transform(X_test.loc[:, sscolumns])
 
+# Define the parameter grid for RandomizedSearchCV
+param_distributions = {
+    'n_estimators': [50, 100, 200, 500],  # Number of trees in the forest
+    'max_depth': [None, 10, 20, 30, 50],  # Maximum depth of the tree
+    'min_samples_split': [2, 5, 10],  # Minimum number of samples required to split an internal node
+    'min_samples_leaf': [1, 2, 4],  # Minimum number of samples required to be at a leaf node
+    'max_features': ['sqrt', 'log2', None],  # Number of features to consider when looking for the best split
+    'bootstrap': [True, False],  # Whether bootstrap samples are used when building trees
+    'class_weight': ['balanced', 'balanced_subsample', None]  # Class weights
+}
 
+# Initialize the RandomForestClassifier
+rf_model = RandomForestClassifier(random_state=1)
 
+# Perform RandomizedSearchCV
+random_search = RandomizedSearchCV(
+    estimator=rf_model,
+    param_distributions=param_distributions,
+    n_iter=50,  # Number of random combinations to try
+    scoring='accuracy',  # Metric to optimize
+    cv=5,  # 5-fold cross-validation
+    verbose=1,
+    n_jobs=-1,  # Use all available CPU cores
+    random_state=1  # For reproducibility
+)
 
+# Fit RandomizedSearchCV
+random_search.fit(X_train, Y_train)
 
+# Get the best model and parameters
+best_model = random_search.best_estimator_
+print("Best Parameters:", random_search.best_params_)
 
-best_model=RandomForestClassifier(random_state=1, class_weight='balanced', n_estimators= 100,
-               min_samples_split= 5, min_samples_leaf= 1, max_features= 'sqrt', max_depth=10)
-
-# Fit the best model
-best_model.fit(X_train, Y_train)
+# Make predictions
 Y_pred = best_model.predict(X_test)
 
+<<<<<<< HEAD
 
 #exporting model
 models_root = project_root / "models"
@@ -133,24 +145,34 @@ joblib.dump(imp_mean, models_root / "imputer_oneyear.pkl")
 joblib.dump(ss, models_root / "standardscaler_oneyear.pkl")
 joblib.dump(features, models_root / "features_oneyear.pkl")
 print('model and scalers exported')
+=======
+# Export the best model and preprocessing objects
+joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl")
+joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
+joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
+joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
+print('Best model and scalers exported')
+>>>>>>> master
 
-#plotting data
+# Evaluate the model
+print('Accuracy score:', accuracy_score(Y_test, Y_pred))
+print('Confusion Matrix:\n', confusion_matrix(Y_test, Y_pred))
 
-print(Y_test)
-print(Y_pred)
-print('R2score: ' , r2_score(Y_test, Y_pred))
-print('Accuracy score: ', accuracy_score(Y_test,Y_pred))
-print(confusion_matrix(Y_test,Y_pred))
+# Feature importance
+importances = best_model.feature_importances_
+feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
+print(feature_importance_df.sort_values(by='Importance', ascending=False))
+
+<<<<<<< HEAD
+feature_importance_df.to_csv(project_root / "data" / "randomforestfeature_importance_oneyear.csv", index=False)
+=======
+# Export feature importance to CSV
+feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\randomforestfeature_importance_randomsearch_oneyear.csv", index=False)
+
+# Plot Actual vs Predicted
 plt.scatter(Y_test, Y_pred)
 plt.xlabel('Actual')
 plt.ylabel('Predicted')
 plt.title('Actual vs Predicted')
 plt.show()
-
-# Feature importance
-
-importances = best_model.feature_importances_
-feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
-print(feature_importance_df.sort_values(by='Importance', ascending=False))
-
-feature_importance_df.to_csv(project_root / "data" / "randomforestfeature_importance_oneyear.csv", index=False)
+>>>>>>> master
