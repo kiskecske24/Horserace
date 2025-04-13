@@ -58,38 +58,59 @@ def preprocess_data(df, race_id):
 
 def getresults(race_id):
     """
-    Predict and display the top 4 horses with the highest probability of being in the top 4,
-    along with the predicted classes of all horses.
+    Predict and display results for a specific race_id in the specified format:
+    I. Top 2 horses for 1st position.
+    II. Top 4 horses for 2-4 range.
+    III. Combined list of horses from I and II.
     """
     # Preprocess the data
     X, filtered_df = preprocess_data(df, race_id)
 
-    # Make predictions (probabilities and classes)
+    # Make predictions (probabilities)
     Y_proba = best_model.predict_proba(X)  # Predicted probabilities
-    Y_pred = best_model.predict(X)        # Predicted classes
+
+    # Calculate probabilities for being in the 1st position
+    prob_1st = Y_proba[:, 0:3].sum(axis=1)  # Class 1 probability (1st place)
+
+    # Calculate probabilities for being in the 2-4 range
+    prob_2_to_4 = Y_proba[:, 1:4].sum(axis=1)  # Sum of probabilities for classes 2, 3, and 4
 
     # Calculate probabilities for being in the top 4
     prob_top4 = Y_proba[:, 0:4].sum(axis=1)  # Sum of probabilities for classes 1, 2, 3, and 4
-
     # Get additional information for display
     numbers = filtered_df['number'].tolist()
 
     # Combine results into a list of tuples
-    results = list(zip(numbers, prob_top4, Y_pred))
+    results = list(zip(numbers, prob_1st, prob_2_to_4))
 
-    # Sort by probabilities for top 4
+    # Sort by probabilities for 1st place
     results.sort(key=lambda x: x[1], reverse=True)
-    top_4_top4 = results[:4]  # Top 4 horses for top 4
+    top_2_1st = results[:2]  # Top 2 horses for 1st place
 
-    # Print the top 4 horses with the highest probability of being in the top 4
-    print("\nTop 4 Horses with the Highest Probability of Being in the Top 4:")
-    for i, (number, prob_top4, _) in enumerate(top_4_top4, start=1):
-        print(f"{i}. Horse Number {number}, Probability Top 4: {prob_top4:.4f}")
+    # Sort by probabilities for 2-4 range
+    results.sort(key=lambda x: x[2], reverse=True)
+    top_4_2_to_4 = results[:3]  # Top 2 horses for 2-4 range
 
-    # Print the predicted classes of all horses
-    print("\nPredicted Classes of All Horses:")
-    for number, _, predicted_class in results:
-        print(f"Horse Number {number}, Predicted Class: {predicted_class}")
+    # Combine the results for I, II, and III
+    combined_horses = list({horse[0] for horse in top_2_1st + top_4_2_to_4})  # Unique horse numbers
 
+    # Print results in the specified format
+    print("\nI.")
+    for i, (number, prob_1st, _) in enumerate(top_2_1st, start=1):
+        print(f"{i}. Horse Number {number}, Probability 1st: {prob_1st:.4f}")
+
+    print("\nII.")
+    for i, (number, prob_1st, _) in enumerate(top_2_1st, start=1):
+        print(f"{i}. Horse Number {number}, Probability 1st: {prob_1st:.4f}")
+    for i, (number, _, prob_2_to_4) in enumerate(top_4_2_to_4, start=1):
+        print(f"{i}. Horse Number {number}, Probability 2-4: {prob_2_to_4:.4f}")
+
+    print("\nIII.")
+    for i, (number, prob_1st, _) in enumerate(top_2_1st, start=1):
+        print(f"{i}. Horse Number {number}, Probability 1st: {prob_1st:.4f}")
+    for i, (number, _, prob_2_to_4) in enumerate(top_4_2_to_4, start=1):
+        print(f"{i}. Horse Number {number}, Probability 2-4: {prob_2_to_4:.4f}")
+
+    
 # Call the function with a specific race_id
-getresults(race_id=18281)
+getresults(race_id=18284)
