@@ -41,7 +41,8 @@ Xcolumns = sscolumns
 # Load data
 df=pd.read_csv(project_root / "data" / "merged_output.csv")
 
-df=df[df['id']>146717] #2020
+#df=df[df['id']>146717] #2020
+# valasztani kisebb  id-t, vagy datumot
 df=df[df['id']<161944] 
 # Filter data
 df = df[df['rank'] != 0]
