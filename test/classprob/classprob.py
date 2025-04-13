@@ -36,7 +36,7 @@ Xcolumns = sscolumns
 # Load data
 df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 df=df[df['id']>146717] #2020
-df=df[df['id']<161944] #2022
+df=df[df['id']<161944] 
 # Filter data
 df = df[df['rank'] != 0]
 df = df[df['rank'] <13]
