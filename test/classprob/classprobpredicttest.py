@@ -7,12 +7,16 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
 import joblib
 
+from pathlib import Path
+project_root = model_dir = Path(__file__).resolve().parent.parent.parent
+models_dir = project_root / "models"
+
 # Load pre-trained model and preprocessing objects
-best_model = joblib.load(r'C:\Users\bence\projectderbiuj\models\classprob_model.pkl')
-imp_mean = joblib.load(r'C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl')
-ss = joblib.load(r'C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl')
-features=joblib.load(r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
-ohe=joblib.load(r"C:\Users\bence\projectderbiuj\models\onehotencoder_oneyear.pkl")
+best_model = joblib.load( models_dir  / "classprob_model.pkl")
+imp_mean = joblib.load(models_dir / "imputer_oneyear.pkl")
+ss = joblib.load(models_dir / "standardscaler_oneyear.pkl")
+features=joblib.load(models_dir / "features_oneyear.pkl")
+ohe=joblib.load(models_dir / "onehotencoder_oneyear.pkl")
 
 # Define columns
 Xcolumns = [
@@ -25,7 +29,7 @@ Xcolumns = [
 sscolumns = Xcolumns
 labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
 categoricalcolumns = ['race_length']
-df= pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
+df= pd.read_csv(project_root / "data" / "merged_output.csv")
 
 def preprocess_data(df, race_id):
     """

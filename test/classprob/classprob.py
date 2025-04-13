@@ -20,6 +20,11 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import mean_squared_error
 
+from pathlib import Path
+
+project_root = model_dir = Path(__file__).resolve().parent.parent.parent
+
+
 # Define columns
 sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -34,7 +39,8 @@ labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
 Xcolumns = sscolumns
 
 # Load data
-df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
+df=pd.read_csv(project_root / "data" / "merged_output.csv")
+
 df=df[df['id']>146717] #2020
 df=df[df['id']<161944] 
 # Filter data
@@ -188,13 +194,15 @@ y = le.fit_transform(y)
 print("\nTraining the best model on the full dataset...")
 best_model.fit(X, y)
 
+models_root = project_root / "models"
+
 # Export preprocessing objects
-joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
-joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
-joblib.dump(ohe, r"C:\Users\bence\projectderbiuj\models\onehotencoder_oneyear.pkl")
-joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
+joblib.dump(imp_mean, models_root / "imputer_oneyear.pkl")
+joblib.dump(ss, models_root / "standardscaler_oneyear.pkl")
+joblib.dump(ohe, models_root / "onehotencoder_oneyear.pkl")
+joblib.dump(features, models_root / "features_oneyear.pkl")
 print('Preprocessing objects exported')
 
 # Export the best model
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\classprob_model.pkl")
+joblib.dump(best_model, models_root / "classprob_model.pkl")
 print(f"Best model exported")
