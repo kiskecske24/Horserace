@@ -34,7 +34,7 @@ sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'jockey_wins_1y', 'horse_wins_percent_1y',
              'horse_podiums_percent_1y', 'horse_fizetos_percent_1y', 'horse_age']
 
-categoricalcolumns = ['race_length']
+categoricalcolumns = ['race_length', 'num_horses']
 labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
 Xcolumns = sscolumns
 
@@ -46,7 +46,7 @@ df=pd.read_csv(project_root / "data" / "merged_output.csv")
 df=df[df['id']<161944] 
 # Filter data
 df = df[df['rank'] != 0]
-df = df[df['rank'] <13]
+df = df[df['rank'] < 13]
 
 # Handle missing values in competitor columns (if any)
 for i in range(1, 14):  # For competitor_1 to competitor_14
@@ -84,10 +84,10 @@ ss = StandardScaler()
 X_train.loc[:, sscolumns] = ss.fit_transform(X_train.loc[:, sscolumns])
 X_test.loc[:, sscolumns] = ss.transform(X_test.loc[:, sscolumns])
 
-# Encode target variable
+# Encode target variable (shift classes to start from 1)
 le = LabelEncoder()
-Y_train = le.fit_transform(Y_train)
-Y_test = le.transform(Y_test)
+Y_train = le.fit_transform(Y_train) + 1  # Shift classes to start from 1
+Y_test = le.transform(Y_test) + 1        # Shift classes to start from 1
 
 # Define models
 models = {
@@ -107,7 +107,7 @@ for name, model in models.items():
     # Use predict_proba for probability-based evaluation
     if hasattr(model, "predict_proba"):
         Y_pred_proba = model.predict_proba(X_test)
-        logloss = log_loss(Y_test, Y_pred_proba)
+        logloss = log_loss(Y_test - 1, Y_pred_proba)  # Adjust Y_test back to 0-based indexing for log_loss
         print(f"{name} Log Loss: {logloss}")
         
         # Update the best model if this model performs better
@@ -134,7 +134,7 @@ else:
 if hasattr(best_model, "predict_proba"):
     print("\nPredicted Probabilities, Predicted Class, and Actual Values:")
     probabilities = best_model.predict_proba(X_test)
-    predicted_classes = np.argmax(probabilities, axis=1)  # Get the class with the highest probability
+    predicted_classes = np.argmax(probabilities, axis=1) + 1  # Shift predicted classes to start from 1
     for i in range(len(Y_test)):
         print(f"Actual: {Y_test[i]}, Predicted Probabilities: {probabilities[i]}, Predicted Class: {predicted_classes[i]}")
 else:
@@ -147,15 +147,15 @@ best_model.fit(X,y)
 
 # Define the parameter grid for HistGradientBoostingClassifier
 param_grid = {
-    "learning_rate": [0.01, 0.05, 0.1, 0.2],
-    "max_iter": [100, 200, 300, 500],
-    "max_depth": [None, 5, 10, 20],
-    "min_samples_leaf": [10, 20, 30],
-    "l2_regularization": [0.0, 0.1, 1.0, 10.0]
+    "learning_rate": [0.01],
+    "max_iter": [200],
+    "max_depth": [None],
+    "min_samples_leaf": [30],
+    "l2_regularization": [10.0]
 }
 
 # Initialize the HistGradientBoostingClassifier
-model = HistGradientBoostingClassifier(random_state=1)
+model = HistGradientBoostingClassifier(class_weight="balanced", random_state=1)
 
 # Perform RandomizedSearchCV
 random_search = RandomizedSearchCV(
@@ -183,6 +183,11 @@ if hasattr(best_model, "predict_proba"):
     logloss = log_loss(Y_test, Y_pred_proba)
     print(f"Log Loss on Test Set: {logloss}")
 
+y_pred=best_model.predict(X_test) # Predict classes on the test set
+# Print the distribution of predicted classes
+from collections import Counter
+print("\nDistribution of Predicted Classes:")
+print(Counter(y_pred))
 # Preprocess the entire dataset
 print("\nPreprocessing the entire dataset...")
 X.loc[:, sscolumns] = imp_mean.fit_transform(X.loc[:, sscolumns])  # Impute missing values
@@ -193,7 +198,7 @@ y = le.fit_transform(y)
 
 # Train the best model on the full dataset
 print("\nTraining the best model on the full dataset...")
-best_model.fit(X, y)
+best_model.fit(X, y + 1)  # Shift y to start from 1
 
 models_root = project_root / "models"
 
