@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -41,9 +42,14 @@ Xcolumns = sscolumns
 # Load data
 df=pd.read_csv(project_root / "data" / "merged_output.csv")
 
-#df=df[df['id']>146717] #2020
-# valasztani kisebb  id-t, vagy datumot
-df=df[df['id']<161944] 
+print(df.columns.tolist())
+
+cutoff = pd.Timestamp('2023-01-01')
+
+df['race_date'] = pd.to_datetime(df['race_date'], errors='coerce')
+df = df[df['race_date'] < cutoff ]
+
+
 # Filter data
 df = df[df['rank'] != 0]
 df = df[df['rank'] < 13]
