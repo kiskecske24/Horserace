@@ -135,7 +135,7 @@ print("Best Parameters:", random_search.best_params_)
 # Make predictions
 Y_pred = best_model.predict(X_test)
 
-<<<<<<< HEAD
+
 
 #exporting model
 models_root = project_root / "models"
@@ -145,14 +145,8 @@ joblib.dump(imp_mean, models_root / "imputer_oneyear.pkl")
 joblib.dump(ss, models_root / "standardscaler_oneyear.pkl")
 joblib.dump(features, models_root / "features_oneyear.pkl")
 print('model and scalers exported')
-=======
-# Export the best model and preprocessing objects
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl")
-joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
-joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
-joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
-print('Best model and scalers exported')
->>>>>>> master
+
+
 
 # Evaluate the model
 print('Accuracy score:', accuracy_score(Y_test, Y_pred))
@@ -163,11 +157,8 @@ importances = best_model.feature_importances_
 feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
 print(feature_importance_df.sort_values(by='Importance', ascending=False))
 
-<<<<<<< HEAD
 feature_importance_df.to_csv(project_root / "data" / "randomforestfeature_importance_oneyear.csv", index=False)
-=======
-# Export feature importance to CSV
-feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\randomforestfeature_importance_randomsearch_oneyear.csv", index=False)
+
 
 # Plot Actual vs Predicted
 plt.scatter(Y_test, Y_pred)
@@ -175,4 +166,4 @@ plt.xlabel('Actual')
 plt.ylabel('Predicted')
 plt.title('Actual vs Predicted')
 plt.show()
->>>>>>> master
+
