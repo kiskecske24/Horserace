@@ -24,7 +24,7 @@ Xcolumns = [
 ]
 sscolumns = Xcolumns
 labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
-categoricalcolumns = ['race_length']
+categoricalcolumns = ['race_length', 'num_horses']
 df= pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 def preprocess_data(df, race_id):
@@ -58,44 +58,38 @@ def preprocess_data(df, race_id):
 
 def getresults(race_id):
     """
-    Predict and display results for a specific race_id, ordered by the average probability of finishing in the 1-4 range.
+    Predict and display the top 4 horses with the highest probability of being in the top 4,
+    along with the predicted classes of all horses.
     """
     # Preprocess the data
     X, filtered_df = preprocess_data(df, race_id)
 
-    # Make predictions (probabilities)
+    # Make predictions (probabilities and classes)
     Y_proba = best_model.predict_proba(X)  # Predicted probabilities
+    Y_pred = best_model.predict(X)        # Predicted classes
 
-    # Calculate the average probability of finishing in the 1-4 range
-    avg_top4_probability = Y_proba[:, 1:4].sum(axis=1) / 4 * 10 # Sum probabilities for classes 1-4 and divide by 4
+    # Calculate probabilities for being in the top 4
+    prob_top4 = Y_proba[:, 0:4].sum(axis=1)  # Sum of probabilities for classes 1, 2, 3, and 4
 
     # Get additional information for display
     numbers = filtered_df['number'].tolist()
-    actual = filtered_df['rank'].tolist()
 
-    # Combine results into a DataFrame
-    results_df = pd.DataFrame({
-        'Number': numbers,
-        'Actual Rank': actual,
-        'Average Top 4 Probability': avg_top4_probability
-    })
+    # Combine results into a list of tuples
+    results = list(zip(numbers, prob_top4, Y_pred))
 
-    # Add all probabilities to the DataFrame
-    for i in range(Y_proba.shape[1]):
-        results_df[f'Class {i} Probability'] = Y_proba[:, i]
+    # Sort by probabilities for top 4
+    results.sort(key=lambda x: x[1], reverse=True)
+    top_4_top4 = results[:4]  # Top 4 horses for top 4
 
-    # Sort the DataFrame by the average probability (descending order)
-    results_df = results_df.sort_values(by='Average Top 4 Probability', ascending=False)
+    # Print the top 4 horses with the highest probability of being in the top 4
+    print("\nTop 4 Horses with the Highest Probability of Being in the Top 4:")
+    for i, (number, prob_top4, _) in enumerate(top_4_top4, start=1):
+        print(f"{i}. Horse Number {number}, Probability Top 4: {prob_top4:.4f}")
 
-    # Display results
-    print("\nResults (Ordered by Average Top 4 Probability):")
-    for _, row in results_df.iterrows():
-        print(f"Number: {row['Number']}, Average Top 4 Probability: {row['Average Top 4 Probability']:.4f}, Actual Rank: {row['Actual Rank']}")
-
-    # Print all probabilities
-    print("\nAll Probabilities:")
-    print(results_df.to_string(index=False))
+    # Print the predicted classes of all horses
+    print("\nPredicted Classes of All Horses:")
+    for number, _, predicted_class in results:
+        print(f"Horse Number {number}, Predicted Class: {predicted_class}")
 
 # Call the function with a specific race_id
-preprocess_data(df, race_id= 18284)
-getresults(race_id= 18284)
+getresults(race_id=18281)
