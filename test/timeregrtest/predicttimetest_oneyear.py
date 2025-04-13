@@ -8,10 +8,11 @@ from sklearn.preprocessing import OneHotEncoder
 import joblib
 
 # Load pre-trained model and preprocessing objects
-best_model = joblib.load(r'C:\Users\bence\projectderbiuj\models\best_regression_model_gridsearch.pkl')
+best_model = joblib.load(r'C:\Users\bence\projectderbiuj\models\classprob_model.pkl')
 imp_mean = joblib.load(r'C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl')
 ss = joblib.load(r'C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl')
-ohe = joblib.load(r'C:\Users\bence\projectderbiuj\models\onehotencoder_oneyear.pkl')  # Load pre-fitted OneHotEncoder
+features=joblib.load(r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
+ohe=joblib.load(r"C:\Users\bence\projectderbiuj\models\onehotencoder_oneyear.pkl")
 
 # Define columns
 Xcolumns = [
@@ -19,11 +20,12 @@ Xcolumns = [
     'horse_min_km_time_6m', 'horse_min_km_time_12m', 'horse_min_km_time_improve_12m',
     'horse_avg_km_time_improve_12m', 'horse_gals_1y', 'horse_wins_1y',
     'horse_podiums_1y', 'horse_fizetos_1y', 'jockey_wins_1y',
-    'horse_wins_percent_1y', 'horse_podiums_percent_1y', 'horse_fizetos_percent_1y'
+    'horse_wins_percent_1y', 'horse_podiums_percent_1y', 'horse_fizetos_percent_1y', 'horse_age'
 ]
 sscolumns = Xcolumns
 labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
-categoricalcolumns = ['race_length', 'horse_age']
+categoricalcolumns = ['race_length']
+df= pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 
 def preprocess_data(df, race_id):
     """
@@ -42,7 +44,8 @@ def preprocess_data(df, race_id):
         filtered_df[f'competitor_{i}'] = le.fit_transform(filtered_df[f'competitor_{i}'].astype(str))
 
     # One-Hot Encode categorical columns using the pre-fitted encoder
-    encoded = ohe.transform(filtered_df[categoricalcolumns])  # Transform using pre-fitted encoder
+    ohe = OneHotEncoder(categories=features, handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
+    encoded = ohe.fit_transform(filtered_df[categoricalcolumns])  # Transform using pre-fitted encoder
 
     # Combine encoded categorical features with the rest of the features
     X = pd.concat([filtered_df[Xcolumns + [f'competitor_{i}' for i in range(1, 14)] + labelcolumns], encoded], axis=1)
@@ -86,4 +89,5 @@ def getresults(race_id):
         print(f"Number: {row['Number']}, Predicted Value: {row['Predicted Value']:.4f}, Actual Rank: {row['Actual Rank']}")
 
 # Call the function with a specific race_id
+preprocess_data(df, race_id=18284)
 getresults(race_id=18284)

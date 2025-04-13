@@ -27,15 +27,16 @@ sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'horse_avg_km_time_improve_12m', 'horse_gals_1y',
              'horse_wins_1y', 'horse_podiums_1y', 'horse_fizetos_1y',
              'jockey_wins_1y', 'horse_wins_percent_1y',
-             'horse_podiums_percent_1y', 'horse_fizetos_percent_1y']
+             'horse_podiums_percent_1y', 'horse_fizetos_percent_1y', 'horse_age']
 
-categoricalcolumns = ['race_length', 'horse_age']
+categoricalcolumns = ['race_length']
 labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
 Xcolumns = sscolumns
 
 # Load data
 df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
 df=df[df['id']>146717] #2020
+df=df[df['id']<161944] #2022
 # Filter data
 df = df[df['rank'] != 0]
 df = df[df['rank'] <13]
@@ -60,6 +61,7 @@ y = df['rank']
 # One-Hot Encode categorical columns
 ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False).set_output(transform='pandas')
 encoded = ohe.fit_transform(df[categoricalcolumns])
+features = ohe.categories_
 X = pd.concat([X, encoded], axis=1)
 
 # Split data
@@ -190,6 +192,7 @@ best_model.fit(X, y)
 joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
 joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
 joblib.dump(ohe, r"C:\Users\bence\projectderbiuj\models\onehotencoder_oneyear.pkl")
+joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
 print('Preprocessing objects exported')
 
 # Export the best model
