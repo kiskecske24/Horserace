@@ -16,6 +16,10 @@ from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_transformer
 from sklearn.ensemble import RandomForestClassifier
 
+from pathlib import Path
+
+project_root = model_dir = Path(__file__).resolve().parent.parent
+
 
 sscolumns=['horse_prize_1y', 'horse_avg_km_time_6m',
        'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -48,7 +52,7 @@ def getdata():
 
 
 
-df=pd.read_csv(r"C:\Users\bence\projectderbiuj\data\querynewtop4.csv")
+df=pd.read_csv(project_root / "data" / "querynewtop4.csv")
 
 #getting dummies
 
@@ -141,11 +145,12 @@ Y_pred = best_model.predict(X_test)
 
 
 #exporting model
+models_root = project_root / "models"
 
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl")
-joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
-joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
-joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
+joblib.dump(best_model, models_root / "modelrandomf_oneyear.pkl")
+joblib.dump(imp_mean, models_root / "imputer_oneyear.pkl")
+joblib.dump(ss, models_root / "standardscaler_oneyear.pkl")
+joblib.dump(features, models_root / "features_oneyear.pkl")
 print('model and scalers exported')
 
 #plotting data
@@ -167,4 +172,4 @@ importances = best_model.feature_importances_
 feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
 print(feature_importance_df.sort_values(by='Importance', ascending=False))
 
-feature_importance_df.to_csv(r"C:\Users\bence\OneDrive\Project derbi\feature_importance_oneyear.csv", index=False)
+feature_importance_df.to_csv(project_root / "data" / "feature_importance_oneyear.csv", index=False)

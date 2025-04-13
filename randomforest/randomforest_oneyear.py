@@ -19,6 +19,9 @@ from sklearn import preprocessing
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.model_selection import RandomizedSearchCV
 
+from pathlib import Path
+
+project_root = model_dir = Path(__file__).resolve().parent.parent
 
 sscolumns = ['horse_prize_1y', 'horse_avg_km_time_6m',
              'horse_avg_km_time_12m', 'horse_min_km_time_6m',
@@ -35,7 +38,7 @@ labelcolumns = ['horse_id', 'stable_id', 'jockey_id']
 Xcolumns = sscolumns
 
 # Load data
-df = pd.read_csv(r"C:\Users\bence\projectderbiuj\data\merged_output.csv")
+df=pd.read_csv(project_root / "data" / "merged_output.csv")
 
 # Filter data
 
@@ -132,12 +135,18 @@ print("Best Parameters:", random_search.best_params_)
 # Make predictions
 Y_pred = best_model.predict(X_test)
 
-# Export the best model and preprocessing objects
-joblib.dump(best_model, r"C:\Users\bence\projectderbiuj\models\modelrandomf_oneyear.pkl")
-joblib.dump(imp_mean, r"C:\Users\bence\projectderbiuj\models\imputer_oneyear.pkl")
-joblib.dump(ss, r"C:\Users\bence\projectderbiuj\models\standardscaler_oneyear.pkl")
-joblib.dump(features, r"C:\Users\bence\projectderbiuj\models\features_oneyear.pkl")
-print('Best model and scalers exported')
+
+
+#exporting model
+models_root = project_root / "models"
+
+joblib.dump(best_model, models_root / "modelrandomf_oneyear.pkl")
+joblib.dump(imp_mean, models_root / "imputer_oneyear.pkl")
+joblib.dump(ss, models_root / "standardscaler_oneyear.pkl")
+joblib.dump(features, models_root / "features_oneyear.pkl")
+print('model and scalers exported')
+
+
 
 # Evaluate the model
 print('Accuracy score:', accuracy_score(Y_test, Y_pred))
@@ -148,8 +157,8 @@ importances = best_model.feature_importances_
 feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': importances})
 print(feature_importance_df.sort_values(by='Importance', ascending=False))
 
-# Export feature importance to CSV
-feature_importance_df.to_csv(r"C:\Users\bence\projectderbiuj\data\randomforestfeature_importance_randomsearch_oneyear.csv", index=False)
+feature_importance_df.to_csv(project_root / "data" / "randomforestfeature_importance_oneyear.csv", index=False)
+
 
 # Plot Actual vs Predicted
 plt.scatter(Y_test, Y_pred)
@@ -157,3 +166,4 @@ plt.xlabel('Actual')
 plt.ylabel('Predicted')
 plt.title('Actual vs Predicted')
 plt.show()
+
