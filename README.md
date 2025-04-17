@@ -36,3 +36,6 @@ pip install -r requirements.txt
 - merged_output.csv
 - querynewtop4.csv
 - trotting1012.db
+
+5. best practices
+- use file handling in a way which works both on Windows and Linux
